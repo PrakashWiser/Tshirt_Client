@@ -1,29 +1,39 @@
 "use client";
 import { useEffect } from "react";
-import { store } from "../store/store";
+import { useSelector } from "react-redux";
+import { setLogoutHandler } from "../api/FetchApi";
+import { logout, refreshToken } from "../store/slice/authSlice";
+import { store, type RootState } from "../store/store";
 import {
-    logout,
-    refreshToken,
-} from "../store/slice/authSlice";
-import {
-    setupTokenRefresh,
+  clearTokenRefresh,
+  setupTokenRefresh,
 } from "../utils/setupTokenRefresh";
 
-import {
-    setLogoutHandler,
-} from "../api/FetchApi";
-
 export default function AuthBootstrap(): null {
-    useEffect(() => {
-        setupTokenRefresh({
-            store,
-            logoutAction: logout,
-            refreshTokenAction: refreshToken,
-        });
-        setLogoutHandler((): void => {
-            store.dispatch(logout());
-        });
-    }, []);
+  const { accessToken, refreshToken: currentRefreshToken } = useSelector(
+    (state: RootState) => state.auth,
+  );
 
-    return null;
+  useEffect(() => {
+    setLogoutHandler(() => {
+      store.dispatch(logout());
+    });
+
+    return () => setLogoutHandler(null);
+  }, []);
+
+  useEffect(() => {
+    if (!accessToken || !currentRefreshToken) {
+      clearTokenRefresh();
+      return;
+    }
+
+    setupTokenRefresh({
+      store,
+      logoutAction: logout,
+      refreshTokenAction: refreshToken,
+    });
+  }, [accessToken, currentRefreshToken]);
+
+  return null;
 }

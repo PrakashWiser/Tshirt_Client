@@ -1,8 +1,6 @@
 interface StorageType {
   getItem: (key: string) => Promise<string | null>;
-
   setItem: (key: string, value: string) => Promise<string>;
-
   removeItem: (key: string) => Promise<void>;
 }
 
@@ -32,6 +30,5 @@ export const persistConfig = {
   key: "root",
   storage,
   whitelist: ["auth", "booking", "user"],
-
   blacklist: ["register"],
 };

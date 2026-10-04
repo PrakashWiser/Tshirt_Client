@@ -1,26 +1,59 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const FETCH_TIMEOUT = 15000;
 
 let isSessionExpiredShown = false;
 let onLogout: (() => void) | null = null;
 
-export const setLogoutHandler = (handler: () => void): void => {
+export const setLogoutHandler = (handler: (() => void) | null): void => {
   onLogout = handler;
 };
 
 interface FetchApiProps {
   endpoint: string;
-  method?: string;
-  body?: any;
+  method?: RequestInit["method"];
+  body?: unknown;
   token?: string | null;
+  skipAuthHandler?: boolean;
 }
 
-export const FetchApi = async <T = any>({
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const getApiErrorMessage = (rawText: string, fallback: string): string => {
+  try {
+    const payload: unknown = JSON.parse(rawText);
+    if (!isRecord(payload)) {
+      return fallback;
+    }
+
+    const data = isRecord(payload.data) ? payload.data : {};
+    const candidates = [
+      data.message,
+      data.errors,
+      payload.errors,
+      payload.message,
+    ];
+    const message = candidates.find(
+      (candidate): candidate is string => typeof candidate === "string",
+    );
+
+    return message || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+export const FetchApi = async <T = unknown>({
   endpoint,
   method = "GET",
   body = null,
   token = null,
+  skipAuthHandler = false,
 }: FetchApiProps): Promise<T> => {
+  if (!API_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL is not configured");
+  }
+
   const controller = new AbortController();
 
   const timeoutId = setTimeout(() => {
@@ -38,19 +71,30 @@ export const FetchApi = async <T = any>({
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method,
-      headers,
-      body:
-        body instanceof FormData ? body : body ? JSON.stringify(body) : null,
-      credentials: "include",
-      signal: controller.signal,
-    });
+    const normalizedEndpoint = endpoint.startsWith("/")
+      ? endpoint
+      : `/${endpoint}`;
+    const response = await fetch(
+      `${API_URL.replace(/\/+$/, "")}${normalizedEndpoint}`,
+      {
+        method,
+        headers,
+        body:
+          body instanceof FormData ? body : body ? JSON.stringify(body) : null,
+        credentials: "include",
+        signal: controller.signal,
+      },
+    );
 
     clearTimeout(timeoutId);
 
     const contentType = response.headers.get("content-type");
     const rawText = await response.text();
+
+    if (response.status === 401 && skipAuthHandler) {
+      const message = getApiErrorMessage(rawText, "Authentication failed");
+      throw new Error(message);
+    }
 
     if (response.status === 401) {
       if (!isSessionExpiredShown) {
@@ -71,31 +115,18 @@ export const FetchApi = async <T = any>({
     }
 
     if (!response.ok) {
-      let json: any = null;
-
-      try {
-        json = JSON.parse(rawText);
-      } catch {}
-
-      const errorMessage =
-        json?.data?.message ||
-        json?.data?.errors ||
-        json?.errors ||
-        json?.message ||
-        "Something went wrong";
-
-      throw new Error(errorMessage);
+      throw new Error(getApiErrorMessage(rawText, "Something went wrong"));
     }
 
     return contentType?.includes("application/json")
       ? (JSON.parse(rawText) as T)
       : (rawText as T);
-  } catch (err: any) {
-    if (err.name === "AbortError") {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
       throw new Error("Request timed out. Please try again.");
     }
 
-    throw err;
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }

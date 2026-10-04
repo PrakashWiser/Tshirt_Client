@@ -1,19 +1,16 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useSelector } from "react-redux";
 import type { ReactNode } from "react";
+import type { RootState } from "../store/store";
+
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 interface ProtectedRouteProps {
   children: ReactNode;
-}
-
-interface RootState {
-  auth: {
-    token: string | null;
-    isAuthenticated: boolean;
-    isLoading: boolean;
-  };
 }
 
 export default function ProtectedRoute({
@@ -22,11 +19,15 @@ export default function ProtectedRoute({
   const router = useRouter();
   const pathname = usePathname();
 
-  const { token, isAuthenticated, isLoading } = useSelector(
+  const { accessToken, isAuthenticated, isLoading } = useSelector(
     (state: RootState) => state.auth,
   );
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
   const protectedRoutes = [
     "/contact",
   ];
@@ -34,22 +35,18 @@ export default function ProtectedRoute({
   const isProtectedRoute = protectedRoutes.includes(pathname);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (
       mounted &&
       isProtectedRoute &&
       !isLoading &&
-      (!token || !isAuthenticated)
+      (!accessToken || !isAuthenticated)
     ) {
       router.replace("/login");
     }
   }, [
     mounted,
     isProtectedRoute,
-    token,
+    accessToken,
     isAuthenticated,
     isLoading,
     router,
@@ -59,7 +56,7 @@ export default function ProtectedRoute({
 
   if (
     isProtectedRoute &&
-    (isLoading || !token || !isAuthenticated)
+    (isLoading || !accessToken || !isAuthenticated)
   ) {
     return null;
   }

@@ -1,13 +1,19 @@
-import DiscoverHelpSection from "./DiscoverHelpSection";
-import HeroSection from "./HeroSection";
-import PropertyCategories from "./PropertyCategories";
+import BestSellers from "./BestSellers";
+import CategorySlider from "./CategorySlider";
+import HeroBanner from "./HeroBanner";
+import TrendingNow from "./TrendingNow";
+import WatchAndShop from "./WatchAndShop";
 
-export default function HomeSection() {
-    return (
-        <>
-            <HeroSection />
-            <PropertyCategories />
-            <DiscoverHelpSection />
-        </>
-    );
+function HomeSection() {
+  return (
+    <>
+      <HeroBanner />
+      <CategorySlider />
+      <BestSellers />
+      <TrendingNow />
+      <WatchAndShop />
+    </>
+  );
 }
+
+export default HomeSection;
