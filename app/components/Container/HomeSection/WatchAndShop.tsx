@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 
@@ -16,28 +17,12 @@ const videos = [
     title: "Stay Meen Men's Shirt",
   },
   {
-    id: 2,
-    video:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-    image:
-      "https://images.unsplash.com/photo-1564257577054-4e2c0b3b4e7b?w=600&q=80",
-    title: "Beach Waves Women's Shirt",
-  },
-  {
     id: 3,
     video:
       "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
     image:
       "https://images.unsplash.com/photo-1610652492500-ded49ceeb378?w=600&q=80",
     title: "Toddy Tales Men's Shirt",
-  },
-  {
-    id: 4,
-    video:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4",
-    image:
-      "https://images.unsplash.com/photo-1583743814966-8936f37f2096?w=600&q=80",
-    title: "Dosa T-Shirt",
   },
   {
     id: 5,
@@ -58,6 +43,43 @@ const videos = [
 ];
 
 function WatchAndShop() {
+  const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+  const [playingId, setPlayingId] = useState<number | null>(null);
+
+  const playVideo = async (id: number) => {
+    const video = videoRefs.current[id];
+
+    if (!video) return;
+
+    try {
+      await video.play();
+      setPlayingId(id);
+    } catch (error) {
+      console.error("Video play failed:", error);
+    }
+  };
+
+  const pauseVideo = (id: number) => {
+    const video = videoRefs.current[id];
+
+    if (!video) return;
+
+    video.pause();
+    setPlayingId((current) => (current === id ? null : current));
+  };
+
+  const toggleVideo = async (id: number) => {
+    const video = videoRefs.current[id];
+
+    if (!video) return;
+
+    if (video.paused) {
+      await playVideo(id);
+    } else {
+      pauseVideo(id);
+    }
+  };
+
   return (
     <section className="w-full bg-[#fffdf9] py-8 sm:py-12 lg:py-14">
       <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
@@ -115,17 +137,50 @@ function WatchAndShop() {
             {videos.map((item) => (
               <SwiperSlide key={item.id} className="!h-auto">
                 <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm">
-                  <div className="relative aspect-[9/14] w-full overflow-hidden bg-black">
+                  <div
+                    className="group/video relative aspect-[9/14] w-full cursor-pointer overflow-hidden bg-black"
+                    onMouseEnter={() => playVideo(item.id)}
+                    onMouseLeave={() => pauseVideo(item.id)}
+                    onClick={() => toggleVideo(item.id)}
+                  >
                     <video
+                      ref={(element) => {
+                        videoRefs.current[item.id] = element;
+                      }}
                       src={item.video}
                       poster={item.image}
-                      autoPlay
                       muted
                       loop
                       playsInline
                       preload="metadata"
                       className="h-full w-full object-cover"
                     />
+
+                    <div
+                      className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+                        playingId === item.id ? "opacity-0" : "opacity-100"
+                      }`}
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm">
+                        <Play
+                          size={22}
+                          fill="currentColor"
+                          className="ml-0.5"
+                        />
+                      </div>
+                    </div>
+
+                    <div
+                      className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
+                        playingId === item.id
+                          ? "opacity-0 group-hover/video:opacity-100"
+                          : "opacity-0"
+                      }`}
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm">
+                        <Pause size={22} fill="currentColor" />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex flex-1 items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-4">
