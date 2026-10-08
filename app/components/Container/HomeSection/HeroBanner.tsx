@@ -51,9 +51,9 @@ function HeroBanner() {
         pagination={{
           clickable: true,
         }}
-        className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/7] md:aspect-[3/1]"
+        className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/7] md:aspect-[16/6]"
       >
-        {items.map((banner, index) => (
+        {items.map((banner) => (
           <SwiperSlide key={banner._id}>
             <div className="relative h-full w-full overflow-hidden">
               <CustomImage

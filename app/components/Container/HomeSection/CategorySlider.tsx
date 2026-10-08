@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -15,6 +16,7 @@ import "swiper/css/navigation";
 
 function CategorySlider() {
   const dispatch = useDispatch<AppDispatch>();
+
   const {
     items: categories,
     isLoading,
@@ -103,7 +105,10 @@ function CategorySlider() {
               >
                 {categories.map((category) => (
                   <SwiperSlide key={category._id} className="!h-auto">
-                    <div className="group flex h-full flex-col cursor-pointer text-center">
+                    <Link
+                      href={`/collections/${category.slug}`}
+                      className="group flex h-full cursor-pointer flex-col text-center"
+                    >
                       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-[#050607] shadow-sm transition-all duration-500 ease-out group-hover:-translate-y-1 group-hover:scale-[1.04] group-hover:shadow-xl">
                         <CustomImage
                           src={category.image}
@@ -121,7 +126,7 @@ function CategorySlider() {
                           {category.name}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                   </SwiperSlide>
                 ))}
               </Swiper>

@@ -27,13 +27,14 @@ function Footer() {
             <Link href="/" className="inline-block">
               <Image
                 src="/images/logo.png"
-                alt="SDN Shop"
+                alt="SND Shop"
                 width={130}
                 height={60}
                 priority
-                className="block h-auto w-[105px] object-contain object-left sm:w-[100px\]"
+                className="-ml-6 block h-auto w-[105px] object-contain object-left sm:w-[110px]"
               />
             </Link>
+
             <p className="mt-3 max-w-xs text-left text-sm leading-6 text-white/70">
               Bold prints, everyday comfort. Made for the ones who wear their
               vibe loud.
@@ -126,7 +127,7 @@ function Footer() {
 
         <div className="mt-10 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            &copy; {new Date().getFullYear()} SDN Shop. All rights reserved.
+            &copy; {new Date().getFullYear()} SND Shop. All rights reserved.
           </p>
           <nav
             aria-label="Footer navigation"

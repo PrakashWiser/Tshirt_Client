@@ -19,8 +19,8 @@ export const metadata: Metadata = {
   ),
 
   title: {
-    default: "T-shirts for Men & Kids | SDN Shop",
-    template: "%s | SDN Shop",
+    default: "T-shirts for Men & Kids | SND Shop",
+    template: "%s | SND Shop",
   },
 
   description:
@@ -39,9 +39,9 @@ export const metadata: Metadata = {
     "online T-shirt shopping",
   ],
 
-  authors: [{ name: "SDN Shop" }],
-  creator: "SDN Shop",
-  publisher: "SDN Shop",
+  authors: [{ name: "SND Shop" }],
+  creator: "SND Shop",
+  publisher: "SND Shop",
 
   alternates: {
     canonical: "/",
@@ -51,8 +51,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
     url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-    siteName: "SDN Shop",
-    title: "T-shirts for Men & Kids | SDN Shop",
+    siteName: "SND Shop",
+    title: "T-shirts for Men & Kids | SND Shop",
     description:
       "Shop trendy and comfortable T-shirts for men and children. Discover quality fabrics, stylish designs, and affordable everyday fashion.",
     images: [
@@ -60,14 +60,14 @@ export const metadata: Metadata = {
         url: "/images/og-image.jpeg",
         width: 1200,
         height: 630,
-        alt: "T-shirts for Men and Kids from SDN Shop",
+        alt: "T-shirts for Men and Kids from SND Shop",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "T-shirts for Men & Kids | SDN Shop",
+    title: "T-shirts for Men & Kids | SND Shop",
     description: "Shop trendy and comfortable T-shirts for men and children.",
     images: ["/images/og-image.jpeg"],
   },

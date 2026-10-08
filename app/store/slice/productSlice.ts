@@ -14,8 +14,8 @@ export interface ProductCategory {
   _id: string;
   name: string;
   slug: string;
-  level: "sub";
-  parentCategory: ParentCategory;
+  level: "sub" | "child" | "parent";
+  parentCategory: ParentCategory | null;
 }
 
 export interface ProductVariant {
@@ -50,7 +50,40 @@ export interface Product {
   __v: number;
 }
 
+export interface ProductPagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export interface ProductFilterParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  size?: string;
+  color?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: string;
+  order?: "asc" | "desc";
+  bestSeller?: boolean;
+  newArrival?: boolean;
+  featured?: boolean;
+  trending?: boolean;
+}
+
 interface ProductsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    products: Product[];
+    pagination: ProductPagination;
+  };
+}
+
+interface SimpleProductsResponse {
   success: boolean;
   message: string;
   data: Product[];
@@ -58,6 +91,7 @@ interface ProductsResponse {
 
 interface ProductState {
   items: Product[];
+  pagination: ProductPagination;
   bestSellerItems: Product[];
   isLoading: boolean;
   isBestSellerLoading: boolean;
@@ -67,12 +101,108 @@ interface ProductState {
 
 const initialState: ProductState = {
   items: [],
+  pagination: {
+    page: 1,
+    limit: 12,
+    total: 0,
+    pages: 0,
+  },
   bestSellerItems: [],
   isLoading: false,
   isBestSellerLoading: false,
   error: null,
   bestSellerError: null,
 };
+
+export const fetchProducts = createAsyncThunk<
+  {
+    products: Product[];
+    pagination: ProductPagination;
+  },
+  ProductFilterParams | undefined,
+  {
+    state: RootState;
+    rejectValue: string;
+  }
+>("products/fetchProducts", async (params = {}, thunkAPI) => {
+  try {
+    const queryParams = new URLSearchParams();
+
+    if (params.page) {
+      queryParams.set("page", String(params.page));
+    }
+
+    if (params.limit) {
+      queryParams.set("limit", String(params.limit));
+    }
+
+    if (params.search) {
+      queryParams.set("search", params.search);
+    }
+
+    if (params.category) {
+      queryParams.set("category", params.category);
+    }
+
+    if (params.size) {
+      queryParams.set("size", params.size);
+    }
+
+    if (params.color) {
+      queryParams.set("color", params.color);
+    }
+
+    if (params.minPrice !== undefined) {
+      queryParams.set("minPrice", String(params.minPrice));
+    }
+
+    if (params.maxPrice !== undefined) {
+      queryParams.set("maxPrice", String(params.maxPrice));
+    }
+
+    if (params.sort) {
+      queryParams.set("sort", params.sort);
+    }
+
+    if (params.order) {
+      queryParams.set("order", params.order);
+    }
+
+    if (params.bestSeller !== undefined) {
+      queryParams.set("bestSeller", String(params.bestSeller));
+    }
+
+    if (params.newArrival !== undefined) {
+      queryParams.set("newArrival", String(params.newArrival));
+    }
+
+    if (params.featured !== undefined) {
+      queryParams.set("featured", String(params.featured));
+    }
+
+    if (params.trending !== undefined) {
+      queryParams.set("trending", String(params.trending));
+    }
+
+    const query = queryParams.toString();
+
+    const response = await FetchApi<ProductsResponse>({
+      endpoint: `/products${query ? `?${query}` : ""}`,
+    });
+
+    if (!response.data || !Array.isArray(response.data.products)) {
+      return thunkAPI.rejectWithValue(
+        "The products response did not contain a product list",
+      );
+    }
+
+    return response.data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(
+      error instanceof Error ? error.message : "Failed to load products",
+    );
+  }
+});
 
 export const fetchTrendingProducts = createAsyncThunk<
   Product[],
@@ -83,7 +213,7 @@ export const fetchTrendingProducts = createAsyncThunk<
   }
 >("products/fetchTrending", async (_, thunkAPI) => {
   try {
-    const response = await FetchApi<ProductsResponse>({
+    const response = await FetchApi<SimpleProductsResponse>({
       endpoint: "/products/trending",
     });
 
@@ -112,7 +242,7 @@ export const fetchBestSellerProducts = createAsyncThunk<
   }
 >("products/fetchBestSeller", async (_, thunkAPI) => {
   try {
-    const response = await FetchApi<ProductsResponse>({
+    const response = await FetchApi<SimpleProductsResponse>({
       endpoint: "/products/best-sellers",
     });
 
@@ -138,6 +268,20 @@ const productSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(fetchProducts.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchProducts.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.items = action.payload.products;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(fetchProducts.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Failed to load products";
+      })
+
       .addCase(fetchTrendingProducts.pending, (state) => {
         state.isLoading = true;
         state.error = null;
