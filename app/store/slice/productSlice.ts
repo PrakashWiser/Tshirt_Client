@@ -89,13 +89,22 @@ interface SimpleProductsResponse {
   data: Product[];
 }
 
+interface SingleProductResponse {
+  success: boolean;
+  message: string;
+  data: Product;
+}
+
 interface ProductState {
   items: Product[];
   pagination: ProductPagination;
   bestSellerItems: Product[];
+  currentProduct: Product | null;
   isLoading: boolean;
+  isCurrentLoading: boolean;
   isBestSellerLoading: boolean;
   error: string | null;
+  currentError: string | null;
   bestSellerError: string | null;
 }
 
@@ -108,9 +117,12 @@ const initialState: ProductState = {
     pages: 0,
   },
   bestSellerItems: [],
+  currentProduct: null,
   isLoading: false,
+  isCurrentLoading: false,
   isBestSellerLoading: false,
   error: null,
+  currentError: null,
   bestSellerError: null,
 };
 
@@ -128,61 +140,26 @@ export const fetchProducts = createAsyncThunk<
   try {
     const queryParams = new URLSearchParams();
 
-    if (params.page) {
-      queryParams.set("page", String(params.page));
-    }
-
-    if (params.limit) {
-      queryParams.set("limit", String(params.limit));
-    }
-
-    if (params.search) {
-      queryParams.set("search", params.search);
-    }
-
-    if (params.category) {
-      queryParams.set("category", params.category);
-    }
-
-    if (params.size) {
-      queryParams.set("size", params.size);
-    }
-
-    if (params.color) {
-      queryParams.set("color", params.color);
-    }
-
-    if (params.minPrice !== undefined) {
+    if (params.page) queryParams.set("page", String(params.page));
+    if (params.limit) queryParams.set("limit", String(params.limit));
+    if (params.search) queryParams.set("search", params.search);
+    if (params.category) queryParams.set("category", params.category);
+    if (params.size) queryParams.set("size", params.size);
+    if (params.color) queryParams.set("color", params.color);
+    if (params.minPrice !== undefined)
       queryParams.set("minPrice", String(params.minPrice));
-    }
-
-    if (params.maxPrice !== undefined) {
+    if (params.maxPrice !== undefined)
       queryParams.set("maxPrice", String(params.maxPrice));
-    }
-
-    if (params.sort) {
-      queryParams.set("sort", params.sort);
-    }
-
-    if (params.order) {
-      queryParams.set("order", params.order);
-    }
-
-    if (params.bestSeller !== undefined) {
+    if (params.sort) queryParams.set("sort", params.sort);
+    if (params.order) queryParams.set("order", params.order);
+    if (params.bestSeller !== undefined)
       queryParams.set("bestSeller", String(params.bestSeller));
-    }
-
-    if (params.newArrival !== undefined) {
+    if (params.newArrival !== undefined)
       queryParams.set("newArrival", String(params.newArrival));
-    }
-
-    if (params.featured !== undefined) {
+    if (params.featured !== undefined)
       queryParams.set("featured", String(params.featured));
-    }
-
-    if (params.trending !== undefined) {
+    if (params.trending !== undefined)
       queryParams.set("trending", String(params.trending));
-    }
 
     const query = queryParams.toString();
 
@@ -200,6 +177,31 @@ export const fetchProducts = createAsyncThunk<
   } catch (error) {
     return thunkAPI.rejectWithValue(
       error instanceof Error ? error.message : "Failed to load products",
+    );
+  }
+});
+
+export const fetchProductBySlug = createAsyncThunk<
+  Product,
+  string,
+  {
+    state: RootState;
+    rejectValue: string;
+  }
+>("products/fetchProductBySlug", async (slug, thunkAPI) => {
+  try {
+    const response = await FetchApi<SingleProductResponse>({
+      endpoint: `/products/${slug}`,
+    });
+
+    if (!response.data) {
+      return thunkAPI.rejectWithValue("Product not found");
+    }
+
+    return response.data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(
+      error instanceof Error ? error.message : "Failed to load product",
     );
   }
 });
@@ -265,7 +267,12 @@ export const fetchBestSellerProducts = createAsyncThunk<
 const productSlice = createSlice({
   name: "products",
   initialState,
-  reducers: {},
+  reducers: {
+    clearCurrentProduct: (state) => {
+      state.currentProduct = null;
+      state.currentError = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchProducts.pending, (state) => {
@@ -280,6 +287,19 @@ const productSlice = createSlice({
       .addCase(fetchProducts.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || "Failed to load products";
+      })
+
+      .addCase(fetchProductBySlug.pending, (state) => {
+        state.isCurrentLoading = true;
+        state.currentError = null;
+      })
+      .addCase(fetchProductBySlug.fulfilled, (state, action) => {
+        state.isCurrentLoading = false;
+        state.currentProduct = action.payload;
+      })
+      .addCase(fetchProductBySlug.rejected, (state, action) => {
+        state.isCurrentLoading = false;
+        state.currentError = action.payload || "Failed to load product";
       })
 
       .addCase(fetchTrendingProducts.pending, (state) => {
@@ -310,5 +330,7 @@ const productSlice = createSlice({
       });
   },
 });
+
+export const { clearCurrentProduct } = productSlice.actions;
 
 export default productSlice.reducer;

@@ -81,11 +81,11 @@ function CollectionSection({ slug }: CollectionSectionProps) {
   const isInitialLoading = isResolvingCategory || isLoading;
 
   return (
-    <section className="w-full bg-[#fffdf9] py-6 sm:py-8 lg:py-10">
+    <section className="w-full bg-[#fffdf9] py-6">
       <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
         <div className="my-6 flex items-center justify-between border-b border-gray-200 pb-4 sm:mb-10">
           <h1 className="text-2xl font-semibold text-[#111] sm:text-3xl">
-            {category?.name || collectionName} Products
+            {category?.name || collectionName} 
           </h1>
 
           <div className="flex items-center gap-2 sm:gap-3">

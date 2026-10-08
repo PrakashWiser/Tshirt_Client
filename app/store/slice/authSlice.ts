@@ -25,6 +25,13 @@ interface LoginPayload {
   password: string;
 }
 
+interface RegisterPayload {
+  name: string;
+  email: string;
+  mobile: string;
+  password: string;
+}
+
 interface AuthResponse {
   success?: boolean;
   message?: string;
@@ -68,41 +75,73 @@ export const loginUser = createAsyncThunk<
   {
     rejectValue: string;
   }
->(
-  "auth/loginUser",
-  async (payload, thunkAPI) => {
-    try {
-      const response = await FetchApi<ApiResponse<AuthTokenData>>({
-        endpoint: "/auth/login",
-        method: "POST",
-        body: payload,
-        skipAuthHandler: true,
-      });
+>("auth/loginUser", async (payload, thunkAPI) => {
+  try {
+    const response = await FetchApi<ApiResponse<AuthTokenData>>({
+      endpoint: "/auth/login",
+      method: "POST",
+      body: payload,
+      skipAuthHandler: true,
+    });
 
-      const accessToken = response.data.accessToken || response.data.token;
-      if (!accessToken) {
-        return thunkAPI.rejectWithValue(
-          "Login response did not include an access token",
-        );
-      }
-
-      const now = Date.now();
-      localStorage.setItem(
-        "tokenExpiry",
-        String(now + ACCESS_TOKEN_LIFETIME_MS),
+    const accessToken = response.data.accessToken || response.data.token;
+    if (!accessToken) {
+      return thunkAPI.rejectWithValue(
+        "Login response did not include an access token",
       );
-      localStorage.setItem("loginTimestamp", String(now));
-
-      return {
-        ...response.data,
-        accessToken,
-        message: response.message,
-      };
-    } catch (error) {
-      return thunkAPI.rejectWithValue(getErrorMessage(error, "Login failed"));
     }
-  },
-);
+
+    const now = Date.now();
+    localStorage.setItem("tokenExpiry", String(now + ACCESS_TOKEN_LIFETIME_MS));
+    localStorage.setItem("loginTimestamp", String(now));
+
+    return {
+      ...response.data,
+      accessToken,
+      message: response.message,
+    };
+  } catch (error) {
+    return thunkAPI.rejectWithValue(getErrorMessage(error, "Login failed"));
+  }
+});
+
+export const registerUser = createAsyncThunk<
+  AuthResponse,
+  RegisterPayload,
+  {
+    rejectValue: string;
+  }
+>("auth/registerUser", async (payload, thunkAPI) => {
+  try {
+    const response = await FetchApi<ApiResponse<AuthTokenData>>({
+      endpoint: "/auth/register",
+      method: "POST",
+      body: payload,
+      skipAuthHandler: true,
+    });
+
+    const accessToken = response.data.accessToken || response.data.token;
+    if (!accessToken) {
+      return thunkAPI.rejectWithValue(
+        "Register response did not include an access token",
+      );
+    }
+
+    const now = Date.now();
+    localStorage.setItem("tokenExpiry", String(now + ACCESS_TOKEN_LIFETIME_MS));
+    localStorage.setItem("loginTimestamp", String(now));
+
+    return {
+      ...response.data,
+      accessToken,
+      message: response.message,
+    };
+  } catch (error) {
+    return thunkAPI.rejectWithValue(
+      getErrorMessage(error, "Registration failed"),
+    );
+  }
+});
 
 export const refreshToken = createAsyncThunk<
   AuthResponse,
@@ -143,9 +182,7 @@ export const refreshToken = createAsyncThunk<
     );
     return { accessToken, message: res.message };
   } catch (error) {
-    return thunkAPI.rejectWithValue(
-      getErrorMessage(error, "Session expired"),
-    );
+    return thunkAPI.rejectWithValue(getErrorMessage(error, "Session expired"));
   }
 });
 
@@ -210,21 +247,17 @@ const authSlice = createSlice({
 
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
-
         state.error = null;
       })
-      .addCase(
-        loginUser.fulfilled,
-        (state, action) => {
-          state.isLoading = false;
-          state.user = action.payload.user || null;
-          state.accessToken = action.payload.accessToken || null;
-          state.refreshToken = action.payload.refreshToken || null;
-          state.isAuthenticated = Boolean(action.payload.accessToken);
-          state.message = action.payload.message || "Login successful";
-          state.error = null;
-        },
-      )
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user || null;
+        state.accessToken = action.payload.accessToken || null;
+        state.refreshToken = action.payload.refreshToken || null;
+        state.isAuthenticated = Boolean(action.payload.accessToken);
+        state.message = action.payload.message || "Login successful";
+        state.error = null;
+      })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.user = null;
@@ -234,14 +267,33 @@ const authSlice = createSlice({
         state.error = action.payload || "Login failed";
       })
 
-      .addCase(
-        refreshToken.fulfilled,
-        (state, action) => {
-          state.accessToken = action.payload?.accessToken || null;
-          state.isAuthenticated = Boolean(action.payload?.accessToken);
-          state.error = null;
-        },
-      )
+      .addCase(registerUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.user || null;
+        state.accessToken = action.payload.accessToken || null;
+        state.refreshToken = action.payload.refreshToken || null;
+        state.isAuthenticated = Boolean(action.payload.accessToken);
+        state.message = action.payload.message || "Registration successful";
+        state.error = null;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.error = action.payload || "Registration failed";
+      })
+
+      .addCase(refreshToken.fulfilled, (state, action) => {
+        state.accessToken = action.payload?.accessToken || null;
+        state.isAuthenticated = Boolean(action.payload?.accessToken);
+        state.error = null;
+      })
       .addCase(refreshToken.rejected, (state, action) => {
         state.isAuthenticated = false;
         state.accessToken = null;
@@ -252,6 +304,7 @@ const authSlice = createSlice({
         localStorage.removeItem("loginTimestamp");
         clearTokenRefresh();
       })
+
       .addCase(logoutUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;

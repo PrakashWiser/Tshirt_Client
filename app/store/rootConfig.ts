@@ -29,6 +29,5 @@ if (typeof window !== "undefined") {
 export const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth", "booking", "user"],
-  blacklist: ["register"],
+  whitelist: ["auth", "booking"],
 };

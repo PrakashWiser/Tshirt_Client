@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ShoppingCart, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomImage from "@/app/common/CustomImage";
@@ -13,7 +14,7 @@ interface ProductCardProps {
     size: string;
     color: string;
     quantity: number;
-  }) => void;
+  }) => Promise<unknown> | unknown;
   className?: string;
 }
 
@@ -26,6 +27,12 @@ function ProductCard({
 }: ProductCardProps) {
   const [buttonState, setButtonState] = useState<ButtonState>("idle");
 
+  useEffect(() => {
+    return () => {
+      setButtonState("idle");
+    };
+  }, []);
+
   const activeVariant = product.variants?.find(
     (variant: ProductVariant) => variant.isActive && variant.stock > 0,
   );
@@ -33,6 +40,7 @@ function ProductCard({
   if (!activeVariant) return null;
 
   const price = activeVariant.price;
+
   const salePrice =
     activeVariant.salePrice > 0 ? activeVariant.salePrice : activeVariant.price;
 
@@ -42,23 +50,27 @@ function ProductCard({
   const image1 = activeVariant.images?.[0];
   const image2 = activeVariant.images?.[1];
 
+  const productUrl = `/products/${product.slug}`;
+
   const handleAddToCart = async () => {
     if (buttonState !== "idle") return;
+    if (!onAddToCart) return;
 
     setButtonState("loading");
 
     try {
-      await Promise.resolve(
-        onAddToCart?.({
-          productId: product._id,
-          size: activeVariant.size,
-          color: activeVariant.color,
-          quantity: 1,
-        }),
-      );
+      await onAddToCart({
+        productId: product._id,
+        size: activeVariant.size,
+        color: activeVariant.color,
+        quantity: 1,
+      });
 
       setButtonState("success");
-      setTimeout(() => setButtonState("idle"), 1600);
+
+      window.setTimeout(() => {
+        setButtonState("idle");
+      }, 1600);
     } catch {
       setButtonState("idle");
     }
@@ -68,7 +80,11 @@ function ProductCard({
     <div
       className={`group/card flex h-full flex-col overflow-hidden bg-white ${className}`}
     >
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#f3f3f3]">
+      <Link
+        href={productUrl}
+        className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden bg-[#f3f3f3]"
+        aria-label={`View ${product.name}`}
+      >
         {image1 ? (
           <CustomImage
             src={image1}
@@ -101,30 +117,36 @@ function ProductCard({
           <motion.span
             initial={{ scale: 0, rotate: -30 }}
             animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 15 }}
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 15,
+            }}
             className="absolute right-2 top-2 z-10 rounded-full bg-[#ffbf00] px-2 py-0.5 text-[10px] font-bold text-white sm:right-3 sm:top-3 sm:px-3 sm:py-1.5 sm:text-xs"
           >
             -{discount}%
           </motion.span>
         )}
-      </div>
+      </Link>
 
       <div className="flex flex-1 flex-col px-2 pb-4 pt-3 text-center sm:px-4 sm:pb-5 sm:pt-4">
-        <h2 className="line-clamp-2 text-xs font-semibold leading-4 text-[#292929] sm:text-base sm:leading-6 lg:text-lg">
-          {product.name}
-        </h2>
+        <Link href={productUrl} className="block cursor-pointer">
+          <h2 className="line-clamp-2 text-xs font-semibold leading-4 text-[#292929] transition-colors hover:text-[#003B1F] sm:text-base sm:leading-6 lg:text-lg">
+            {product.name}
+          </h2>
 
-        <div className="mt-1.5 flex items-center justify-center gap-1.5 whitespace-nowrap sm:mt-2 sm:gap-2">
-          {price > salePrice && (
-            <span className="text-[11px] font-medium text-gray-500 line-through sm:text-sm lg:text-base">
-              Rs {price}.00
+          <div className="mt-1.5 flex items-center justify-center gap-1.5 whitespace-nowrap sm:mt-2 sm:gap-2">
+            {price > salePrice && (
+              <span className="text-[11px] font-medium text-gray-500 line-through sm:text-sm lg:text-base">
+                Rs {price.toLocaleString()}.00
+              </span>
+            )}
+
+            <span className="text-sm font-bold text-[#e62f2f] sm:text-lg lg:text-xl">
+              Rs {salePrice.toLocaleString()}.00
             </span>
-          )}
-
-          <span className="text-sm font-bold text-[#e62f2f] sm:text-lg lg:text-xl">
-            Rs {salePrice}.00
-          </span>
-        </div>
+          </div>
+        </Link>
 
         <div className="mt-auto pt-3">
           <div className="mx-auto h-px w-full bg-gray-200" />
@@ -132,16 +154,26 @@ function ProductCard({
           <motion.button
             type="button"
             onClick={handleAddToCart}
-            disabled={buttonState !== "idle"}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.95 }}
+            disabled={buttonState !== "idle" || !onAddToCart}
+            whileHover={buttonState === "idle" ? { scale: 1.02 } : undefined}
+            whileTap={buttonState === "idle" ? { scale: 0.95 } : undefined}
             animate={
               buttonState === "success"
-                ? { backgroundColor: "#003B1F", color: "#ffffff" }
-                : { backgroundColor: "transparent" }
+                ? {
+                    backgroundColor: "#003B1F",
+                    color: "#ffffff",
+                  }
+                : {
+                    backgroundColor: "rgba(0, 0, 0, 0)",
+                    color: "#222222",
+                  }
             }
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="relative mt-2.5 flex w-full cursor-pointer items-center justify-center gap-1.5 overflow-hidden text-[11px] font-semibold text-[#222] transition-colors duration-300 hover:text-[#003B1F] disabled:cursor-not-allowed sm:mt-4 sm:gap-2 sm:text-sm lg:text-base"
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 25,
+            }}
+            className="relative mt-2.5 flex w-full cursor-pointer items-center justify-center gap-1.5 overflow-hidden text-[11px] font-semibold transition-colors duration-300 hover:text-[#003B1F] disabled:cursor-not-allowed disabled:opacity-70 sm:mt-4 sm:gap-2 sm:text-sm lg:text-base"
           >
             <AnimatePresence mode="wait" initial={false}>
               {buttonState === "idle" && (
@@ -153,25 +185,16 @@ function ProductCard({
                   transition={{ duration: 0.18 }}
                   className="flex items-center justify-center gap-1.5 sm:gap-2"
                 >
-                  <motion.span
-                    animate={{ y: [0, -2, 0] }}
-                    transition={{
-                      duration: 1.8,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  >
-                    <ShoppingCart
-                      size={16}
-                      strokeWidth={1.8}
-                      className="sm:hidden"
-                    />
-                    <ShoppingCart
-                      size={20}
-                      strokeWidth={1.8}
-                      className="hidden sm:block"
-                    />
-                  </motion.span>
+                  <ShoppingCart
+                    size={16}
+                    strokeWidth={1.8}
+                    className="sm:hidden"
+                  />
+                  <ShoppingCart
+                    size={20}
+                    strokeWidth={1.8}
+                    className="hidden sm:block"
+                  />
                   ADD TO CART
                 </motion.span>
               )}
@@ -201,24 +224,26 @@ function ProductCard({
               {buttonState === "success" && (
                 <motion.span
                   key="success"
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.6 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                  initial={{
+                    opacity: 0,
+                    scale: 0.6,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                  }}
+                  exit={{
+                    opacity: 0,
+                    scale: 0.6,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 500,
+                    damping: 20,
+                  }}
                   className="flex items-center justify-center gap-2"
                 >
-                  <motion.span
-                    initial={{ scale: 0, rotate: -90 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 15,
-                      delay: 0.05,
-                    }}
-                  >
-                    <Check size={18} strokeWidth={2.5} />
-                  </motion.span>
+                  <Check size={18} strokeWidth={2.5} />
                   ADDED!
                 </motion.span>
               )}

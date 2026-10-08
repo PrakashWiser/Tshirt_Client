@@ -1,8 +1,4 @@
-import {
-  createAsyncThunk,
-  createSlice,
-  type PayloadAction,
-} from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { FetchApi } from "../../api/FetchApi";
 import type { RootState } from "../store";
 import type { Product } from "./productSlice";
@@ -56,15 +52,23 @@ const initialState: CartState = {
   error: null,
 };
 
-/* ---------- Thunks ---------- */
-
 export const fetchCart = createAsyncThunk<
   Cart,
   void,
-  { state: RootState; rejectValue: string }
+  {
+    state: RootState;
+    rejectValue: string;
+  }
 >("cart/fetchCart", async (_, thunkAPI) => {
+  const state = thunkAPI.getState();
+  const token = state.auth.accessToken;
+
   try {
-    const response = await FetchApi<CartResponse>({ endpoint: "/cart" });
+    const response = await FetchApi<CartResponse>({
+      endpoint: "/cart",
+      token,
+    });
+
     return response.data;
   } catch (error) {
     return thunkAPI.rejectWithValue(
@@ -76,14 +80,27 @@ export const fetchCart = createAsyncThunk<
 export const addToCart = createAsyncThunk<
   Cart,
   AddToCartPayload,
-  { state: RootState; rejectValue: string }
+  {
+    state: RootState;
+    rejectValue: string;
+  }
 >("cart/addToCart", async (payload, thunkAPI) => {
+  const state = thunkAPI.getState();
+  const token = state.auth.accessToken;
+
   try {
-    const response = await FetchApi<CartResponse>({
+    await FetchApi<CartResponse>({
       endpoint: "/cart",
       method: "POST",
       body: payload,
+      token,
     });
+
+    const response = await FetchApi<CartResponse>({
+      endpoint: "/cart",
+      token,
+    });
+
     return response.data;
   } catch (error) {
     return thunkAPI.rejectWithValue(
@@ -95,14 +112,29 @@ export const addToCart = createAsyncThunk<
 export const updateCartItem = createAsyncThunk<
   Cart,
   UpdateCartItemPayload,
-  { state: RootState; rejectValue: string }
+  {
+    state: RootState;
+    rejectValue: string;
+  }
 >("cart/updateCartItem", async ({ itemId, quantity }, thunkAPI) => {
+  const state = thunkAPI.getState();
+  const token = state.auth.accessToken;
+
   try {
-    const response = await FetchApi<CartResponse>({
+    await FetchApi<CartResponse>({
       endpoint: `/cart/${itemId}`,
       method: "PUT",
-      body: { quantity },
+      body: {
+        quantity,
+      },
+      token,
     });
+
+    const response = await FetchApi<CartResponse>({
+      endpoint: "/cart",
+      token,
+    });
+
     return response.data;
   } catch (error) {
     return thunkAPI.rejectWithValue(
@@ -114,13 +146,26 @@ export const updateCartItem = createAsyncThunk<
 export const removeCartItem = createAsyncThunk<
   Cart,
   string,
-  { state: RootState; rejectValue: string }
+  {
+    state: RootState;
+    rejectValue: string;
+  }
 >("cart/removeCartItem", async (itemId, thunkAPI) => {
+  const state = thunkAPI.getState();
+  const token = state.auth.accessToken;
+
   try {
-    const response = await FetchApi<CartResponse>({
+    await FetchApi<CartResponse>({
       endpoint: `/cart/${itemId}`,
       method: "DELETE",
+      token,
     });
+
+    const response = await FetchApi<CartResponse>({
+      endpoint: "/cart",
+      token,
+    });
+
     return response.data;
   } catch (error) {
     return thunkAPI.rejectWithValue(
@@ -132,13 +177,26 @@ export const removeCartItem = createAsyncThunk<
 export const clearCart = createAsyncThunk<
   Cart,
   void,
-  { state: RootState; rejectValue: string }
+  {
+    state: RootState;
+    rejectValue: string;
+  }
 >("cart/clearCart", async (_, thunkAPI) => {
+  const state = thunkAPI.getState();
+  const token = state.auth.accessToken;
+
   try {
-    const response = await FetchApi<CartResponse>({
+    await FetchApi<CartResponse>({
       endpoint: "/cart",
       method: "DELETE",
+      token,
     });
+
+    const response = await FetchApi<CartResponse>({
+      endpoint: "/cart",
+      token,
+    });
+
     return response.data;
   } catch (error) {
     return thunkAPI.rejectWithValue(
@@ -150,6 +208,7 @@ export const clearCart = createAsyncThunk<
 const cartSlice = createSlice({
   name: "cart",
   initialState,
+
   reducers: {
     resetCartState: (state) => {
       state.cart = null;
@@ -158,16 +217,20 @@ const cartSlice = createSlice({
       state.error = null;
     },
   },
+
   extraReducers: (builder) => {
     builder
+
       .addCase(fetchCart.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
+
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.isLoading = false;
         state.cart = action.payload;
       })
+
       .addCase(fetchCart.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || "Failed to load cart";
@@ -177,10 +240,12 @@ const cartSlice = createSlice({
         state.isMutating = true;
         state.error = null;
       })
+
       .addCase(addToCart.fulfilled, (state, action) => {
         state.isMutating = false;
         state.cart = action.payload;
       })
+
       .addCase(addToCart.rejected, (state, action) => {
         state.isMutating = false;
         state.error = action.payload || "Failed to add item to cart";
@@ -190,10 +255,12 @@ const cartSlice = createSlice({
         state.isMutating = true;
         state.error = null;
       })
+
       .addCase(updateCartItem.fulfilled, (state, action) => {
         state.isMutating = false;
         state.cart = action.payload;
       })
+
       .addCase(updateCartItem.rejected, (state, action) => {
         state.isMutating = false;
         state.error = action.payload || "Failed to update cart item";
@@ -203,10 +270,12 @@ const cartSlice = createSlice({
         state.isMutating = true;
         state.error = null;
       })
+
       .addCase(removeCartItem.fulfilled, (state, action) => {
         state.isMutating = false;
         state.cart = action.payload;
       })
+
       .addCase(removeCartItem.rejected, (state, action) => {
         state.isMutating = false;
         state.error = action.payload || "Failed to remove cart item";
@@ -216,10 +285,12 @@ const cartSlice = createSlice({
         state.isMutating = true;
         state.error = null;
       })
+
       .addCase(clearCart.fulfilled, (state, action) => {
         state.isMutating = false;
         state.cart = action.payload;
       })
+
       .addCase(clearCart.rejected, (state, action) => {
         state.isMutating = false;
         state.error = action.payload || "Failed to clear cart";
@@ -228,4 +299,5 @@ const cartSlice = createSlice({
 });
 
 export const { resetCartState } = cartSlice.actions;
+
 export default cartSlice.reducer;

@@ -1,14 +1,17 @@
 "use client";
+
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
 import type { AppDispatch } from "../store/store";
 import type { RootState } from "../store/rootReducer";
+
 import {
   addToCart as addToCartThunk,
   fetchCart,
-  updateCartItem,
-  removeCartItem,
-  clearCart,
-  type Cart,
+  updateCartItem as updateCartItemThunk,
+  removeCartItem as removeCartItemThunk,
+  clearCart as clearCartThunk,
 } from "../store/slice/cartSlice";
 
 interface AddToCartArgs {
@@ -20,25 +23,70 @@ interface AddToCartArgs {
 
 export function useCart() {
   const dispatch = useDispatch<AppDispatch>();
-  const cart = useSelector((state: RootState) => state.cart.cart);
-  const isMutating = useSelector((state: RootState) => state.cart.isMutating);
+
+  const cart = useSelector(
+    (state: RootState) => state.cart.cart,
+  );
+
+  const isMutating = useSelector(
+    (state: RootState) => state.cart.isMutating,
+  );
 
   const itemCount =
-    cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+    cart?.items.reduce(
+      (sum, item) => sum + item.quantity,
+      0,
+    ) ?? 0;
 
   const subtotal =
-    cart?.items.reduce((sum, item) => sum + item.price * item.quantity, 0) ?? 0;
+    cart?.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    ) ?? 0;
+
+  const fetchCartData = useCallback(() => {
+    return dispatch(fetchCart());
+  }, [dispatch]);
+
+  const addCartItem = useCallback(
+    (payload: AddToCartArgs) => {
+      return dispatch(addToCartThunk(payload));
+    },
+    [dispatch],
+  );
+
+  const updateCartItemData = useCallback(
+    (itemId: string, quantity: number) => {
+      return dispatch(
+        updateCartItemThunk({
+          itemId,
+          quantity,
+        }),
+      );
+    },
+    [dispatch],
+  );
+
+  const removeCartItemData = useCallback(
+    (itemId: string) => {
+      return dispatch(removeCartItemThunk(itemId));
+    },
+    [dispatch],
+  );
+
+  const clearCartData = useCallback(() => {
+    return dispatch(clearCartThunk());
+  }, [dispatch]);
 
   return {
     cart,
     itemCount,
     subtotal,
     isMutating,
-    addToCart: (payload: AddToCartArgs) => dispatch(addToCartThunk(payload)),
-    fetchCart: () => dispatch(fetchCart()),
-    updateCartItem: (itemId: string, quantity: number) =>
-      dispatch(updateCartItem({ itemId, quantity })),
-    removeCartItem: (itemId: string) => dispatch(removeCartItem(itemId)),
-    clearCart: () => dispatch(clearCart()),
+    addToCart: addCartItem,
+    fetchCart: fetchCartData,
+    updateCartItem: updateCartItemData,
+    removeCartItem: removeCartItemData,
+    clearCart: clearCartData,
   };
 }
