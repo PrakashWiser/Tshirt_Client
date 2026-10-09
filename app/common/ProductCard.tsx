@@ -6,6 +6,9 @@ import { ShoppingCart, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomImage from "@/app/common/CustomImage";
 import type { Product, ProductVariant } from "@/app/store/slice/productSlice";
+import { AppDispatch, RootState } from "../store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { openAuthModal } from "../store/slice/authModalSlice";
 
 interface ProductCardProps {
   product: Product;
@@ -26,7 +29,11 @@ function ProductCard({
   className = "",
 }: ProductCardProps) {
   const [buttonState, setButtonState] = useState<ButtonState>("idle");
+  const dispatch = useDispatch<AppDispatch>();
 
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth,
+  );
   useEffect(() => {
     return () => {
       setButtonState("idle");
@@ -49,10 +56,14 @@ function ProductCard({
 
   const image1 = activeVariant.images?.[0];
   const image2 = activeVariant.images?.[1];
-
   const productUrl = `/products/${product.slug}`;
 
   const handleAddToCart = async () => {
+    if (!isAuthenticated || !user) {
+      dispatch(openAuthModal("login"));
+      return;
+    }
+
     if (buttonState !== "idle") return;
     if (!onAddToCart) return;
 

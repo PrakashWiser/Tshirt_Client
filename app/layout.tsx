@@ -7,6 +7,7 @@ import AuthBootstrap from "./common/AuthBootstrap";
 import ConditionalHeader from "./common/ConditionalHeader";
 import Footer from "./components/Common/Footer/Footer";
 import WhatsAppButton from "./common/WhatsAppButton";
+import AuthModal from "./common/AuthModal";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -105,6 +106,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ReduxProvider>
           <AuthBootstrap />
+          <AuthModal />
           <ConditionalHeader />
           <ProtectedRoute>{children}</ProtectedRoute>
           <Footer />

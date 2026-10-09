@@ -22,7 +22,7 @@ import { fetchProducts, type Product } from "@/app/store/slice/productSlice";
 import { logoutUser } from "@/app/store/slice/authSlice";
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
-import AuthModal from "@/app/common/AuthModal";
+import { openAuthModal } from "@/app/store/slice/authModalSlice";
 
 const navItems = [
   { label: "Shop", href: "/products", dropdown: true },
@@ -47,7 +47,6 @@ function Header() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 350);
-  const [authOpen, setAuthOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -175,7 +174,7 @@ function Header() {
                 <button
                   type="button"
                   aria-label="Account"
-                  onClick={() => setAuthOpen(true)}
+                  onClick={() => dispatch(openAuthModal("login"))}
                   className="text-gray-800 transition-colors hover:text-[#003B1F]"
                 >
                   <UserRound size={22} strokeWidth={1.8} />
@@ -548,7 +547,7 @@ function Header() {
                         type="button"
                         onClick={() => {
                           setMobileMenu(false);
-                          setAuthOpen(true);
+                          dispatch(openAuthModal("login"));
                         }}
                         className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium text-gray-800 transition-colors hover:bg-[#E8F1EC] hover:text-[#003B1F]"
                       >
@@ -563,12 +562,6 @@ function Header() {
           )}
         </AnimatePresence>
       </header>
-
-      <AuthModal
-        isOpen={authOpen}
-        initialView="login"
-        onClose={() => setAuthOpen(false)}
-      />
     </>
   );
 }

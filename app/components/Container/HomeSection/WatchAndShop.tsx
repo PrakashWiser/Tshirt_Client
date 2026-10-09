@@ -65,6 +65,7 @@ function WatchAndShop() {
     if (!video) return;
 
     video.pause();
+
     setPlayingId((current) => (current === id ? null : current));
   };
 
@@ -112,12 +113,12 @@ function WatchAndShop() {
               prevEl: ".watch-prev",
               nextEl: ".watch-next",
             }}
-            spaceBetween={12}
-            slidesPerView={1.2}
+            spaceBetween={10}
+            slidesPerView={1.35}
             breakpoints={{
               480: {
-                slidesPerView: 1.5,
-                spaceBetween: 14,
+                slidesPerView: 1.8,
+                spaceBetween: 12,
               },
               640: {
                 slidesPerView: 2,
@@ -138,7 +139,7 @@ function WatchAndShop() {
               <SwiperSlide key={item.id} className="!h-auto">
                 <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm">
                   <div
-                    className="group/video relative aspect-[9/14] w-full cursor-pointer overflow-hidden bg-black"
+                    className="group/video relative aspect-[9/12] w-full cursor-pointer overflow-hidden bg-black"
                     onMouseEnter={() => playVideo(item.id)}
                     onMouseLeave={() => pauseVideo(item.id)}
                     onClick={() => toggleVideo(item.id)}
@@ -158,14 +159,16 @@ function WatchAndShop() {
 
                     <div
                       className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${
-                        playingId === item.id ? "opacity-0" : "opacity-100"
+                        playingId === item.id
+                          ? "opacity-0"
+                          : "opacity-100"
                       }`}
                     >
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm sm:h-12 sm:w-12">
                         <Play
-                          size={22}
+                          size={18}
                           fill="currentColor"
-                          className="ml-0.5"
+                          className="ml-0.5 sm:h-[22px] sm:w-[22px]"
                         />
                       </div>
                     </div>
@@ -177,14 +180,18 @@ function WatchAndShop() {
                           : "opacity-0"
                       }`}
                     >
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm">
-                        <Pause size={22} fill="currentColor" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm sm:h-12 sm:w-12">
+                        <Pause
+                          size={18}
+                          fill="currentColor"
+                          className="sm:h-[22px] sm:w-[22px]"
+                        />
                       </div>
                     </div>
                   </div>
 
                   <div className="flex flex-1 items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-4">
-                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-14 sm:w-14">
+                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-14 sm:w-14">
                       <img
                         src={item.image}
                         alt={item.title}

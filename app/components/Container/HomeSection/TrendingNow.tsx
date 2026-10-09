@@ -30,7 +30,7 @@ function TrendingNow() {
     <section className="w-full bg-[#fffdf9] py-8 sm:py-12 lg:py-14">
       <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center justify-center sm:mb-8">
-          <h2 className="text-2xl font-semibold tracking-tight text-[#222] sm:text-3xl lg:text-4xl">
+          <h2 className="text-2xl font-semibold tracking-tight text-[#222] sm:text-3xl lg:text-4xl text-center md:text-left">
             The Styles Everyone Is Talking About.{" "}
           </h2>
         </div>

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Minus, Plus, ShoppingCart, Eye, Star, ChevronUp } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
+import { openAuthModal } from "@/app/store/slice/authModalSlice";
 import {
   fetchProductBySlug,
   clearCurrentProduct,
@@ -20,6 +21,9 @@ interface ProductSectionProps {
 function ProductSection({ slug }: ProductSectionProps) {
   const dispatch = useDispatch<AppDispatch>();
   const { addToCart } = useCart();
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth,
+  );
 
   const {
     currentProduct: product,
@@ -75,6 +79,10 @@ function ProductSection({ slug }: ProductSectionProps) {
 
   const handleAddToCart = () => {
     if (!product || !activeVariant || isOutOfStock) return;
+    if (!isAuthenticated || !user) {
+      dispatch(openAuthModal("login"));
+      return;
+    }
 
     addToCart({
       productId: product._id,

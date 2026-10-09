@@ -4,41 +4,50 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
+
 import type { AppDispatch } from "@/app/store/store";
 import type { RootState } from "@/app/store/rootReducer";
+
 import {
   loginUser,
   registerUser,
   clearAuthError,
 } from "@/app/store/slice/authSlice";
 
-type AuthView = "login" | "register";
+import { closeAuthModal } from "@/app/store/slice/authModalSlice";
 
-interface AuthModalProps {
-  isOpen: boolean;
-  initialView?: AuthView;
-  onClose: () => void;
-}
+type AuthView = "login" | "register";
 
 const slideVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 60 : -60,
     opacity: 0,
   }),
-  center: { x: 0, opacity: 1 },
+
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+
   exit: (direction: number) => ({
     x: direction > 0 ? -60 : 60,
     opacity: 0,
   }),
 };
 
-function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
+function AuthModal() {
   const dispatch = useDispatch<AppDispatch>();
+
+  const { isOpen, initialView } = useSelector(
+    (state: RootState) => state.authModal,
+  );
+
   const { isLoading, error, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
   );
 
   const wasAuthenticatedRef = useRef(isAuthenticated);
+
   const [view, setView] = useState<AuthView>(initialView);
   const [direction, setDirection] = useState(1);
   const [loginEmail, setLoginEmail] = useState("");
@@ -50,6 +59,7 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
 
   useEffect(() => {
     const wasAuth = wasAuthenticatedRef.current;
+
     wasAuthenticatedRef.current = isAuthenticated;
 
     if (!wasAuth && isAuthenticated && isOpen) {
@@ -74,27 +84,37 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
   const resetForms = () => {
     setLoginEmail("");
     setLoginPassword("");
+
     setFirstName("");
     setRegEmail("");
     setRegMobile("");
     setRegPassword("");
+
     dispatch(clearAuthError());
   };
 
   const handleClose = () => {
     resetForms();
-    onClose();
+    dispatch(closeAuthModal());
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     dispatch(clearAuthError());
-    void dispatch(loginUser({ email: loginEmail, password: loginPassword }));
+
+    void dispatch(
+      loginUser({
+        email: loginEmail,
+        password: loginPassword,
+      }),
+    );
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     dispatch(clearAuthError());
+
     void dispatch(
       registerUser({
         name: firstName,
@@ -121,10 +141,25 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
 
           <motion.div
             key="auth-modal"
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            initial={{
+              opacity: 0,
+              scale: 0.95,
+              y: 20,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.95,
+              y: 20,
+            }}
+            transition={{
+              duration: 0.25,
+              ease: [0.22, 1, 0.36, 1],
+            }}
             className="fixed inset-0 z-[101] flex items-start justify-center overflow-y-auto p-4 sm:items-center"
           >
             <div
@@ -135,10 +170,21 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.h2
                     key={view}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.18 }}
+                    initial={{
+                      opacity: 0,
+                      y: 6,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -6,
+                    }}
+                    transition={{
+                      duration: 0.18,
+                    }}
                     className="text-base font-bold tracking-wider text-gray-900"
                   >
                     {view === "login" ? "LOGIN" : "REGISTER"}
@@ -154,7 +200,6 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                   <X size={22} strokeWidth={2.2} />
                 </button>
               </div>
-
               <div className="relative overflow-hidden px-6 py-6">
                 <AnimatePresence mode="wait" custom={direction} initial={false}>
                   {view === "login" ? (
@@ -165,7 +210,10 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                       initial="enter"
                       animate="center"
                       exit="exit"
-                      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{
+                        duration: 0.28,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
                       onSubmit={handleLogin}
                       className="space-y-4"
                     >
@@ -173,6 +221,7 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                         <label className="mb-1.5 block text-[11px] font-medium tracking-wider text-gray-500">
                           EMAIL ADDRESS
                         </label>
+
                         <input
                           type="email"
                           required
@@ -182,11 +231,11 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                           className="w-full rounded border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500"
                         />
                       </div>
-
                       <div>
                         <label className="mb-1.5 block text-[11px] font-medium tracking-wider text-gray-500">
                           PASSWORD
                         </label>
+
                         <input
                           type="password"
                           required
@@ -196,9 +245,7 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                           className="w-full rounded border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500"
                         />
                       </div>
-
                       {error && <p className="text-xs text-red-500">{error}</p>}
-
                       <button
                         type="submit"
                         disabled={isLoading}
@@ -209,7 +256,6 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                         )}
                         SIGN IN
                       </button>
-
                       <p className="text-center text-sm text-gray-600">
                         Lost password?{" "}
                         <button
@@ -219,7 +265,6 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                           Forgot Password
                         </button>
                       </p>
-
                       <button
                         type="button"
                         onClick={() => switchView("register")}
@@ -236,7 +281,10 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                       initial="enter"
                       animate="center"
                       exit="exit"
-                      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                      transition={{
+                        duration: 0.28,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
                       onSubmit={handleRegister}
                       className="space-y-4"
                     >
@@ -244,6 +292,7 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                         <label className="mb-1.5 block text-[11px] font-medium tracking-wider text-gray-500">
                           NAME
                         </label>
+
                         <input
                           type="text"
                           value={firstName}
@@ -252,11 +301,11 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                           className="w-full rounded border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500"
                         />
                       </div>
-
                       <div>
                         <label className="mb-1.5 block text-[11px] font-medium tracking-wider text-gray-500">
                           EMAIL <span className="text-red-500">*</span>
                         </label>
+
                         <input
                           type="email"
                           required
@@ -266,11 +315,11 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                           className="w-full rounded border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500"
                         />
                       </div>
-
                       <div>
                         <label className="mb-1.5 block text-[11px] font-medium tracking-wider text-gray-500">
                           MOBILE <span className="text-red-500">*</span>
                         </label>
+
                         <input
                           type="tel"
                           required
@@ -280,11 +329,11 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                           className="w-full rounded border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500"
                         />
                       </div>
-
                       <div>
                         <label className="mb-1.5 block text-[11px] font-medium tracking-wider text-gray-500">
                           PASSWORD <span className="text-red-500">*</span>
                         </label>
+
                         <input
                           type="password"
                           required
@@ -295,9 +344,7 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                           className="w-full rounded border border-gray-300 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500"
                         />
                       </div>
-
                       {error && <p className="text-xs text-red-500">{error}</p>}
-
                       <button
                         type="submit"
                         disabled={isLoading}
@@ -308,7 +355,6 @@ function AuthModal({ isOpen, initialView = "login", onClose }: AuthModalProps) {
                         )}
                         REGISTER
                       </button>
-
                       <p className="pt-2 text-center text-sm text-gray-600">
                         Already have an account?{" "}
                         <button
