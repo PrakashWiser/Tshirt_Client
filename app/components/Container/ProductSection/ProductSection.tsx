@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, Plus, ShoppingCart, Eye, Star, ChevronUp } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  ShoppingCart,
+  Eye,
+  Star,
+  ChevronUp,
+  Heart,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { openAuthModal } from "@/app/store/slice/authModalSlice";
 import {
@@ -13,6 +21,10 @@ import {
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
 import { useCart } from "@/app/utils/useCart";
+import {
+  addToWishlist,
+  removeFromWishlist,
+} from "@/app/store/slice/wishlistSlice";
 
 interface ProductSectionProps {
   slug: string;
@@ -25,6 +37,10 @@ function ProductSection({ slug }: ProductSectionProps) {
     (state: RootState) => state.auth,
   );
 
+  const { wishlist, isMutating: wishlistLoading } = useSelector(
+    (state: RootState) => state.wishlist,
+  );
+
   const {
     currentProduct: product,
     isCurrentLoading: isLoading,
@@ -35,6 +51,10 @@ function ProductSection({ slug }: ProductSectionProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
+
+  const isFavorite = wishlist.some(
+    (item) => item.product?._id === product?._id,
+  );
 
   useEffect(() => {
     if (!slug) return;
@@ -83,13 +103,25 @@ function ProductSection({ slug }: ProductSectionProps) {
       dispatch(openAuthModal("login"));
       return;
     }
-
     addToCart({
       productId: product._id,
       size: activeVariant.size,
       color: activeVariant.color,
       quantity: Math.min(quantity, maxQuantity),
     });
+  };
+
+  const handleWishlist = () => {
+    if (!product) return;
+    if (!isAuthenticated || !user) {
+      dispatch(openAuthModal("login"));
+      return;
+    }
+    if (isFavorite) {
+      dispatch(removeFromWishlist(product._id));
+    } else {
+      dispatch(addToWishlist(product._id));
+    }
   };
 
   const handleSelectSize = (size: string) => {
@@ -132,6 +164,23 @@ function ProductSection({ slug }: ProductSectionProps) {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-8 sm:px-6 lg:grid-cols-2 lg:gap-12 lg:px-8 lg:py-12">
         <div className="flex flex-col gap-4">
           <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-50">
+            <button
+              type="button"
+              onClick={handleWishlist}
+              disabled={wishlistLoading}
+              aria-label={
+                isFavorite ? "Remove from wishlist" : "Add to wishlist"
+              }
+              className="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Heart
+                size={21}
+                className={`transition ${
+                  isFavorite ? "fill-red-500 text-red-500" : "text-gray-700"
+                }`}
+              />
+            </button>
+
             <AnimatePresence mode="wait">
               {variantImages[activeImageIndex] && (
                 <motion.div
@@ -153,29 +202,26 @@ function ProductSection({ slug }: ProductSectionProps) {
                 </motion.div>
               )}
             </AnimatePresence>
-
             {discountPercent > 0 && (
               <span className="absolute left-4 top-4 z-10 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-black">
                 -{discountPercent}%
               </span>
             )}
-
             {isOutOfStock && (
-              <span className="absolute right-4 top-4 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white">
+              <span className="absolute right-4 top-20 z-10 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white">
                 OUT OF STOCK
               </span>
             )}
           </div>
-
           {variantImages.length > 1 && (
-            <div className="flex gap-3 justify-center overflow-x-auto pb-1">
+            <div className="flex justify-center gap-3 overflow-x-auto pb-1">
               {variantImages.map((img, index) => (
                 <button
                   key={img + index}
                   type="button"
                   onClick={() => setActiveImageIndex(index)}
                   aria-label={`View image ${index + 1}`}
-                  className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-md border-2 transition ${
+                  className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-md border-2 border-gray-300 transition ${
                     activeImageIndex === index
                       ? "border-[#003B1F]"
                       : "border-transparent hover:border-gray-300"

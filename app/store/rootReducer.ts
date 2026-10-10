@@ -5,6 +5,9 @@ import parentCategoryReducer from "./slice/parentCategorySlice";
 import productReducer from "./slice/productSlice";
 import cartReducer from "./slice/cartSlice";
 import authModalReducer from "./slice/authModalSlice";
+import wishlistReducer from "./slice/wishlistSlice";
+import contactReducer from "./slice/contactSlice";
+
 const rootReducer = combineReducers({
   auth: authReducer,
   banners: bannerReducer,
@@ -12,6 +15,8 @@ const rootReducer = combineReducers({
   products: productReducer,
   cart: cartReducer,
   authModal: authModalReducer,
+  wishlist: wishlistReducer,
+  contact: contactReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
