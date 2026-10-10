@@ -115,7 +115,7 @@ function Footer() {
               </li>
               <li>
                 <Link
-                  href="/contact"
+                  href="/contactus"
                   className="transition-colors duration-200 hover:text-white"
                 >
                   Contact Us
@@ -156,7 +156,7 @@ function Footer() {
             </Link>
             <Link
               className="transition-colors hover:text-white"
-              href="/contact"
+              href="/contactus"
             >
               Contact
             </Link>
