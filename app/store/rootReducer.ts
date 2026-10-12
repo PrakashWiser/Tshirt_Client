@@ -7,6 +7,8 @@ import cartReducer from "./slice/cartSlice";
 import authModalReducer from "./slice/authModalSlice";
 import wishlistReducer from "./slice/wishlistSlice";
 import contactReducer from "./slice/contactSlice";
+import addressReducer from "./slice/addressSlice";
+import orderReducer from "./slice/orderSlice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -17,6 +19,8 @@ const rootReducer = combineReducers({
   authModal: authModalReducer,
   wishlist: wishlistReducer,
   contact: contactReducer,
+  address: addressReducer,
+  order: orderReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

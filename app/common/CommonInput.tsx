@@ -22,7 +22,7 @@ const InputField: React.FC<InputFieldProps> = ({
     return (
         <div>
             {showLabel && name && (
-                <label className="block mb-1 text-gray-700 capitalize">
+                <label className="block mb-1 text-gray-500 capitalize">
                     Enter your {name.replace(/([A-Z])/g, " $1")}
                 </label>
             )}
