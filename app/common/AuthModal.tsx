@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,6 +15,7 @@ import {
 } from "@/app/store/slice/authSlice";
 
 import { closeAuthModal } from "@/app/store/slice/authModalSlice";
+import { useStoreNotification } from "@/app/common/StoreNotificationProvider";
 
 type AuthView = "login" | "register";
 
@@ -37,19 +38,33 @@ const slideVariants = {
 
 function AuthModal() {
   const dispatch = useDispatch<AppDispatch>();
+  const notify = useStoreNotification();
 
   const { isOpen, initialView } = useSelector(
     (state: RootState) => state.authModal,
   );
 
-  const { isLoading, error, isAuthenticated } = useSelector(
+  const { isLoading, error, isAuthenticated, user } = useSelector(
     (state: RootState) => state.auth,
   );
 
   const wasAuthenticatedRef = useRef(isAuthenticated);
 
-  const [view, setView] = useState<AuthView>(initialView);
-  const [direction, setDirection] = useState(1);
+  const [modalView, setModalView] = useState({
+    isOpen,
+    initialView,
+    view: initialView,
+    direction: initialView === "register" ? 1 : -1,
+  });
+  if (modalView.isOpen !== isOpen || modalView.initialView !== initialView) {
+    setModalView({
+      isOpen,
+      initialView,
+      view: initialView,
+      direction: initialView === "register" ? 1 : -1,
+    });
+  }
+  const { view, direction } = modalView;
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -58,30 +73,19 @@ function AuthModal() {
   const [regPassword, setRegPassword] = useState("");
 
   useEffect(() => {
-    const wasAuth = wasAuthenticatedRef.current;
-
-    wasAuthenticatedRef.current = isAuthenticated;
-
-    if (!wasAuth && isAuthenticated && isOpen) {
-      handleClose();
-    }
-  }, [isAuthenticated, isOpen]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setView(initialView);
-      setDirection(initialView === "register" ? 1 : -1);
-      dispatch(clearAuthError());
-    }
-  }, [isOpen, initialView, dispatch]);
+    if (isOpen) dispatch(clearAuthError());
+  }, [isOpen, dispatch]);
 
   const switchView = (next: AuthView) => {
-    setDirection(next === "register" ? 1 : -1);
-    setView(next);
+    setModalView((current) => ({
+      ...current,
+      view: next,
+      direction: next === "register" ? 1 : -1,
+    }));
     dispatch(clearAuthError());
   };
 
-  const resetForms = () => {
+  const resetForms = useCallback(() => {
     setLoginEmail("");
     setLoginPassword("");
 
@@ -91,12 +95,26 @@ function AuthModal() {
     setRegPassword("");
 
     dispatch(clearAuthError());
-  };
+  }, [dispatch]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     resetForms();
     dispatch(closeAuthModal());
-  };
+  }, [dispatch, resetForms]);
+
+  useEffect(() => {
+    const wasAuth = wasAuthenticatedRef.current;
+
+    wasAuthenticatedRef.current = isAuthenticated;
+
+    if (!wasAuth && isAuthenticated && isOpen) {
+      notify({
+        title: "Welcome to SND Shop",
+        message: `Welcome${user?.name ? `, ${user.name}` : " back"}.`,
+      });
+      handleClose();
+    }
+  }, [handleClose, isAuthenticated, isOpen, notify, user?.name]);
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

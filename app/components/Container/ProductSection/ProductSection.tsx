@@ -25,6 +25,7 @@ import {
   addToWishlist,
   removeFromWishlist,
 } from "@/app/store/slice/wishlistSlice";
+import { useRouter } from "next/navigation";
 
 interface ProductSectionProps {
   slug: string;
@@ -32,6 +33,7 @@ interface ProductSectionProps {
 
 function ProductSection({ slug }: ProductSectionProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
   const { addToCart } = useCart();
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
@@ -122,6 +124,22 @@ function ProductSection({ slug }: ProductSectionProps) {
     } else {
       dispatch(addToWishlist(product._id));
     }
+  };
+
+  const handleBuyNow = () => {
+    if (!product || !activeVariant || isOutOfStock) return;
+    if (!isAuthenticated || !user) {
+      dispatch(openAuthModal("login"));
+      return;
+    }
+    addToCart({
+      productId: product._id,
+      size: activeVariant.size,
+      color: activeVariant.color,
+      quantity: Math.min(quantity, maxQuantity),
+    });
+
+    router.push("/checkout");
   };
 
   const handleSelectSize = (size: string) => {
@@ -356,7 +374,7 @@ function ProductSection({ slug }: ProductSectionProps) {
               type="button"
               onClick={handleAddToCart}
               disabled={isOutOfStock}
-              className="flex flex-1 items-center justify-center gap-2 rounded border border-gray-300 bg-white px-6 py-3 text-sm font-medium tracking-wide text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex flex-1 items-center cursor-pointer justify-center gap-2 rounded border border-gray-300 bg-white px-6 py-3 text-sm font-medium tracking-wide text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ShoppingCart size={18} />
               {isOutOfStock ? "OUT OF STOCK" : "ADD TO CART"}
@@ -365,9 +383,9 @@ function ProductSection({ slug }: ProductSectionProps) {
 
           <button
             type="button"
-            onClick={handleAddToCart}
+            onClick={handleBuyNow}
             disabled={isOutOfStock}
-            className="w-full rounded bg-[#1a1a1a] px-6 py-3 text-sm font-medium tracking-wide text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded cursor-pointer bg-[#1a1a1a] px-6 py-3 text-sm font-medium tracking-wide text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isOutOfStock ? "OUT OF STOCK" : "BUY IT NOW"}
           </button>

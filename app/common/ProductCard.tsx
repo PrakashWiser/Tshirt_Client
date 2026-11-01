@@ -9,6 +9,7 @@ import type { Product, ProductVariant } from "@/app/store/slice/productSlice";
 import { AppDispatch, RootState } from "../store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { openAuthModal } from "../store/slice/authModalSlice";
+import { useStoreNotification } from "@/app/common/StoreNotificationProvider";
 
 interface ProductCardProps {
   product: Product;
@@ -30,6 +31,7 @@ function ProductCard({
 }: ProductCardProps) {
   const [buttonState, setButtonState] = useState<ButtonState>("idle");
   const dispatch = useDispatch<AppDispatch>();
+  const notify = useStoreNotification();
 
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
@@ -82,8 +84,13 @@ function ProductCard({
       window.setTimeout(() => {
         setButtonState("idle");
       }, 1600);
-    } catch {
+    } catch (error) {
       setButtonState("idle");
+      notify({
+        title: "Could not add to cart",
+        message: error instanceof Error ? error.message : "Please try again.",
+        kind: "error",
+      });
     }
   };
 

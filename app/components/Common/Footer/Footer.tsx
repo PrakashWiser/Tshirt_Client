@@ -11,11 +11,8 @@ const categories = [
 
 const quickLinks = [
   { label: "About", href: "/about" },
-  { label: "Collection", href: "/collections" },
-  { label: "Sitemap", href: "/sitemap" },
-  { label: "Contact", href: "/contact" },
-  { label: "Privacy Policy", href: "/privacy-policy" },
-  { label: "Terms & Conditions", href: "/terms" },
+  { label: "Contact", href: "/contactus" },
+  { label: "Sitemap", href: "/sitemap.xml" },
 ];
 
 function Footer() {
@@ -77,10 +74,14 @@ function Footer() {
           </div>
           <div className="col-span-1 text-left">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
-              Legal
+              Explore
             </h3>
             <ul className="mt-4 space-y-2.5">
-              {quickLinks.slice(3).map((link) => (
+              {[
+                { label: "Home", href: "/" },
+                { label: "Cart", href: "/cart" },
+                { label: "Wishlist", href: "/wishlist" },
+              ].map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -141,24 +142,15 @@ function Footer() {
             </Link>
             <Link
               className="transition-colors hover:text-white"
-              href="/privacy-policy"
-            >
-              Privacy
-            </Link>
-            <Link className="transition-colors hover:text-white" href="/terms">
-              Terms
-            </Link>
-            <Link
-              className="transition-colors hover:text-white"
-              href="/sitemap"
-            >
-              Sitemap
-            </Link>
-            <Link
-              className="transition-colors hover:text-white"
               href="/contactus"
             >
               Contact
+            </Link>
+            <Link
+              className="transition-colors hover:text-white"
+              href="/sitemap.xml"
+            >
+              Sitemap
             </Link>
           </nav>
         </div>

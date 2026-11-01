@@ -8,6 +8,7 @@ import ConditionalHeader from "./common/ConditionalHeader";
 import Footer from "./components/Common/Footer/Footer";
 import WhatsAppButton from "./common/WhatsAppButton";
 import AuthModal from "./common/AuthModal";
+import StoreNotificationProvider from "./common/StoreNotificationProvider";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -105,12 +106,14 @@ export default function RootLayout({
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <body suppressHydrationWarning>
         <ReduxProvider>
-          <AuthBootstrap />
-          <AuthModal />
-          <ConditionalHeader />
-          <ProtectedRoute>{children}</ProtectedRoute>
-          <Footer />
-          <WhatsAppButton />
+          <StoreNotificationProvider>
+            <AuthBootstrap />
+            <AuthModal />
+            <ConditionalHeader />
+            <ProtectedRoute>{children}</ProtectedRoute>
+            <Footer />
+            <WhatsAppButton />
+          </StoreNotificationProvider>
         </ReduxProvider>
       </body>
     </html>
