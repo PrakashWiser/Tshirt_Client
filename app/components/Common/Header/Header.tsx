@@ -19,6 +19,10 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useCart } from "@/app/utils/useCart";
 import { fetchProducts, type Product } from "@/app/store/slice/productSlice";
+import {
+  fetchCategories,
+  fetchParentCategories,
+} from "@/app/store/slice/parentCategorySlice";
 import { logoutUser } from "@/app/store/slice/authSlice";
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
@@ -26,9 +30,7 @@ import { openAuthModal } from "@/app/store/slice/authModalSlice";
 import { getAvailableVariant, getEffectivePrice, getProductImage } from "@/app/utils/product";
 
 const navItems = [
-  { label: "Shop", href: "/products", dropdown: true },
-  { label: "Men", href: "/men", dropdown: true },
-  { label: "Kids", href: "/kids", dropdown: true },
+  { label: "Shop", href: "/products" },
   { label: "T-Shirts", href: "/products" },
   { label: "New Arrivals", href: "/products?sort=newest" },
   { label: "Best Sellers", href: "/products?sort=popular" },
@@ -50,6 +52,9 @@ function Header() {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 350);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [expandedMobileCategoryId, setExpandedMobileCategoryId] = useState<
+    string | null
+  >(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -61,6 +66,12 @@ function Header() {
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
   );
+  const {
+    items: parentCategories,
+    categories,
+    isCategoriesLoading,
+    categoriesError,
+  } = useSelector((state: RootState) => state.parentCategories);
 
   const safeProducts: Product[] = Array.isArray(products) ? products : [];
 
@@ -107,6 +118,11 @@ function Header() {
   const results = showResults ? safeProducts.slice(0, 6) : EMPTY_PRODUCTS;
 
   useEffect(() => {
+    void dispatch(fetchParentCategories());
+    void dispatch(fetchCategories());
+  }, [dispatch]);
+
+  useEffect(() => {
     if (isAuthenticated) {
       void fetchCart();
     }
@@ -139,15 +155,51 @@ function Header() {
                   className="group flex items-center gap-1 whitespace-nowrap text-sm font-medium text-gray-800 transition-colors duration-200 hover:text-[#003B1F]"
                 >
                   {item.label}
-                  {item.dropdown && (
-                    <ChevronDown
-                      size={13}
-                      strokeWidth={1.8}
-                      className="transition-transform duration-200 group-hover:rotate-180"
-                    />
-                  )}
                 </Link>
               ))}
+              {parentCategories.map((category) => {
+                const childCategories = categories.filter(
+                  (item) => item.parentCategory?._id === category._id,
+                );
+
+                return (
+                  <div key={category._id} className="group relative">
+                    <Link
+                      href={`/collections/${category.slug}`}
+                      aria-haspopup={childCategories.length > 0}
+                      className="flex items-center gap-1 whitespace-nowrap text-sm font-medium text-gray-800 transition-colors duration-200 hover:text-[#003B1F]"
+                    >
+                      {category.name}
+                      {childCategories.length > 0 && (
+                        <ChevronDown
+                          size={13}
+                          strokeWidth={1.8}
+                          className="transition-transform duration-200 group-hover:rotate-180"
+                        />
+                      )}
+                    </Link>
+                    {childCategories.length > 0 && (
+                      <div className="invisible absolute left-0 top-full z-50 mt-2 min-w-48 translate-y-1 rounded-lg border border-gray-100 bg-white py-2 opacity-0 shadow-xl transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                        <Link
+                          href={`/collections/${category.slug}`}
+                          className="block px-4 py-2 text-sm font-semibold text-[#003B1F] hover:bg-[#F4F7F5]"
+                        >
+                          All {category.name}
+                        </Link>
+                        {childCategories.map((child) => (
+                          <Link
+                            key={child._id}
+                            href={`/collections/${child.slug}`}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-[#F4F7F5] hover:text-[#003B1F]"
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </nav>
 
             <div className="flex shrink-0 items-center gap-4 ">
@@ -488,12 +540,79 @@ function Header() {
                         className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-medium text-gray-800 transition-colors hover:bg-[#E8F1EC] hover:text-[#003B1F]"
                       >
                         <span>{item.label}</span>
-                        {item.dropdown && (
-                          <ChevronDown size={16} strokeWidth={1.8} />
-                        )}
                       </Link>
                     </motion.div>
                   ))}
+                  {parentCategories.map((category) => {
+                    const childCategories = categories.filter(
+                      (item) => item.parentCategory?._id === category._id,
+                    );
+                    const expanded =
+                      expandedMobileCategoryId === category._id;
+
+                    return (
+                      <motion.div
+                        key={category._id}
+                        variants={{
+                          hidden: { opacity: 0, x: -12 },
+                          show: { opacity: 1, x: 0 },
+                        }}
+                      >
+                        <div className="flex items-center rounded-lg hover:bg-[#E8F1EC]">
+                          <Link
+                            href={`/collections/${category.slug}`}
+                            onClick={() => setMobileMenu(false)}
+                            className="flex-1 px-3 py-3 text-sm font-medium text-gray-800 hover:text-[#003B1F]"
+                          >
+                            {category.name}
+                          </Link>
+                          {childCategories.length > 0 && (
+                            <button
+                              type="button"
+                              aria-label={`${expanded ? "Collapse" : "Expand"} ${category.name} categories`}
+                              aria-expanded={expanded}
+                              onClick={() =>
+                                setExpandedMobileCategoryId(
+                                  expanded ? null : category._id,
+                                )
+                              }
+                              className="px-3 py-3 text-gray-700"
+                            >
+                              <ChevronDown
+                                size={16}
+                                strokeWidth={1.8}
+                                className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+                              />
+                            </button>
+                          )}
+                        </div>
+                        {expanded && (
+                          <div className="ml-3 border-l border-gray-200 pl-3">
+                            {childCategories.map((child) => (
+                              <Link
+                                key={child._id}
+                                href={`/collections/${child.slug}`}
+                                onClick={() => setMobileMenu(false)}
+                                className="block rounded-lg px-3 py-2.5 text-sm text-gray-600 hover:bg-[#E8F1EC] hover:text-[#003B1F]"
+                              >
+                                {child.name}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                  {isCategoriesLoading && parentCategories.length === 0 && (
+                    <p className="px-3 py-3 text-sm text-gray-500">
+                      Loading categories...
+                    </p>
+                  )}
+                  {categoriesError && parentCategories.length === 0 && (
+                    <p role="alert" className="px-3 py-3 text-sm text-red-600">
+                      Unable to load categories: {categoriesError}
+                    </p>
+                  )}
 
                   <motion.div
                     variants={{

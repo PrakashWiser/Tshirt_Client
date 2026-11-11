@@ -48,7 +48,25 @@ export default function AIChatWidget() {
       content: "Hi! Tell me what you are looking”",
     },
   ]);
+  const widgetRef = useRef<HTMLDivElement>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleOutsidePointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !widgetRef.current?.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handleOutsidePointerDown);
+    return () =>
+      document.removeEventListener("pointerdown", handleOutsidePointerDown);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -110,7 +128,10 @@ export default function AIChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-24 right-5 z-[60] sm:bottom-24 sm:right-6">
+    <div
+      ref={widgetRef}
+      className="fixed bottom-24 right-5 z-[60] sm:bottom-24 sm:right-6"
+    >
       {open && (
         <section
           aria-label="AI shopping assistant"
