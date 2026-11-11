@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   Check,
   ChevronLeft,
@@ -92,6 +93,7 @@ function CheckoutSkeleton() {
 }
 
 export default function CheckoutSection() {
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { cart, subtotal, fetchCart } = useCart();
   const items = cart?.items ?? [];
@@ -120,6 +122,16 @@ export default function CheckoutSection() {
     void fetchCart();
     void dispatch(fetchAddresses());
   }, [dispatch, fetchCart]);
+
+  useEffect(() => {
+    if (!showSuccessModal) return;
+
+    const redirectTimer = window.setTimeout(() => {
+      router.push("/orders");
+    }, 3000);
+
+    return () => window.clearTimeout(redirectTimer);
+  }, [router, showSuccessModal]);
 
   const shippingCharge = subtotal > 2000 ? 0 : 100;
   const totalAmount = subtotal + shippingCharge;
@@ -696,6 +708,16 @@ export default function CheckoutSection() {
               <p className="mt-2 text-sm leading-6 text-gray-500">
                 Your order has been placed successfully.
               </p>
+              <p className="mt-1 text-xs text-gray-400">
+                Redirecting to My Orders in a few seconds...
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/orders")}
+                className="mt-6 w-full rounded-xl bg-[#003b1f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#002d18]"
+              >
+                View my orders
+              </button>
             </motion.div>
           </motion.div>
         )}
