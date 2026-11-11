@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   ChevronDown,
+  ClipboardList,
   Loader2,
   LogOut,
   User as UserIcon,
@@ -23,6 +24,7 @@ import {
   fetchCategories,
   fetchParentCategories,
 } from "@/app/store/slice/parentCategorySlice";
+import { fetchWishlist } from "@/app/store/slice/wishlistSlice";
 import { logoutUser } from "@/app/store/slice/authSlice";
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
@@ -65,6 +67,9 @@ function Header() {
   );
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
+  );
+  const wishlistCount = useSelector(
+    (state: RootState) => state.wishlist.wishlist.length,
   );
   const {
     items: parentCategories,
@@ -127,8 +132,9 @@ function Header() {
   useEffect(() => {
     if (isAuthenticated) {
       void fetchCart();
+      void dispatch(fetchWishlist());
     }
-  }, [isAuthenticated, fetchCart]);
+  }, [dispatch, isAuthenticated, fetchCart]);
 
   return (
     <>
@@ -322,7 +328,15 @@ function Header() {
                           className="flex items-center gap-2 px-4 py-3 text-sm text-gray-800 transition hover:bg-[#F4F7F5]"
                         >
                           <UserIcon size={16} />
-                          My Account
+                          My Profile
+                        </Link>
+                        <Link
+                          href="/orders"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-3 text-sm text-gray-800 transition hover:bg-[#F4F7F5]"
+                        >
+                          <ClipboardList size={16} />
+                          My Orders
                         </Link>
                         <button
                           type="button"
@@ -343,10 +357,32 @@ function Header() {
 
               <Link
                 href="/wishlist"
-                aria-label="Wishlist"
-                className="hidden text-gray-800 transition-colors hover:text-[#003B1F] sm:block"
+                aria-label={
+                  wishlistCount > 0 && isAuthenticated
+                    ? `Wishlist, ${wishlistCount} saved`
+                    : "Wishlist"
+                }
+                className="relative hidden text-gray-800 transition-colors hover:text-[#003B1F] sm:block"
               >
                 <Heart size={22} strokeWidth={1.8} />
+                <AnimatePresence>
+                  {wishlistCount > 0 && isAuthenticated && (
+                    <motion.span
+                      key={wishlistCount}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.5, opacity: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 20,
+                      }}
+                      className="absolute -right-2.5 -top-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#003B1F] px-1 text-[10px] font-semibold text-white"
+                    >
+                      {wishlistCount}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
               </Link>
 
               <Link
@@ -695,6 +731,41 @@ function Header() {
                     </p>
                   )}
 
+                  {isAuthenticated && (
+                    <>
+                      <motion.div
+                        variants={{
+                          hidden: { opacity: 0, x: -12 },
+                          show: { opacity: 1, x: 0 },
+                        }}
+                      >
+                        <Link
+                          href="/account"
+                          onClick={() => setMobileMenu(false)}
+                          className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-800 transition-colors hover:bg-[#E8F1EC] hover:text-[#003B1F]"
+                        >
+                          <UserIcon size={18} strokeWidth={1.8} />
+                          My Profile
+                        </Link>
+                      </motion.div>
+                      <motion.div
+                        variants={{
+                          hidden: { opacity: 0, x: -12 },
+                          show: { opacity: 1, x: 0 },
+                        }}
+                      >
+                        <Link
+                          href="/orders"
+                          onClick={() => setMobileMenu(false)}
+                          className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-800 transition-colors hover:bg-[#E8F1EC] hover:text-[#003B1F]"
+                        >
+                          <ClipboardList size={18} strokeWidth={1.8} />
+                          My Orders
+                        </Link>
+                      </motion.div>
+                    </>
+                  )}
+
                   <motion.div
                     variants={{
                       hidden: { opacity: 0, x: -12 },
@@ -704,10 +775,17 @@ function Header() {
                     <Link
                       href="/wishlist"
                       onClick={() => setMobileMenu(false)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-800 transition-colors hover:bg-[#E8F1EC] hover:text-[#003B1F]"
+                      className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-medium text-gray-800 transition-colors hover:bg-[#E8F1EC] hover:text-[#003B1F]"
                     >
-                      <Heart size={18} strokeWidth={1.8} />
-                      Wishlist
+                      <span className="flex items-center gap-3">
+                        <Heart size={18} strokeWidth={1.8} />
+                        Wishlist
+                      </span>
+                      {wishlistCount > 0 && isAuthenticated && (
+                        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#003B1F] px-1 text-[10px] font-semibold text-white">
+                          {wishlistCount}
+                        </span>
+                      )}
                     </Link>
                   </motion.div>
 

@@ -135,7 +135,7 @@ export default function AIChatWidget() {
       {open && (
         <section
           aria-label="AI shopping assistant"
-          className="absolute bottom-16 right-0 flex h-[min(72dvh,620px)] w-[calc(100vw-2rem)] max-w-[390px] flex-col overflow-hidden rounded-2xl border border-[#e8ece9] bg-[#fffdf9] shadow-2xl"
+          className="fixed inset-0 flex h-[100dvh] w-auto max-w-none flex-col overflow-hidden border-0 border-[#e8ece9] bg-[#fffdf9] pt-[env(safe-area-inset-top)] shadow-none sm:absolute sm:inset-auto sm:bottom-16 sm:right-0 sm:h-[min(72dvh,620px)] sm:w-[calc(100vw-2rem)] sm:max-w-[390px] sm:rounded-2xl sm:border sm:pt-0 sm:shadow-2xl"
         >
           <header className="flex items-center justify-between bg-[#003b1f] px-4 py-3 text-white">
             <div className="flex items-center gap-2">
@@ -187,7 +187,7 @@ export default function AIChatWidget() {
             ) : null}
           </div>
 
-          <form onSubmit={(event) => void sendMessage(event)} className="flex gap-2 border-t border-[#e8ece9] bg-white p-3">
+          <form onSubmit={(event) => void sendMessage(event)} className="flex gap-2 border-t border-[#e8ece9] bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">
             <input
               aria-label="Message shopping assistant"
               value={draft}
@@ -213,7 +213,7 @@ export default function AIChatWidget() {
         onClick={() => setOpen((current) => !current)}
         aria-label={open ? "Close shopping assistant" : "Open shopping assistant"}
         aria-expanded={open}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#003b1f] text-white shadow-lg transition hover:scale-105 hover:bg-[#002d18]"
+        className={`flex h-14 w-14 items-center justify-center rounded-full bg-[#003b1f] text-white shadow-lg transition hover:scale-105 hover:bg-[#002d18] ${open ? "max-sm:hidden" : ""}`}
       >
         {open ? <X size={23} /> : <MessageCircle size={23} />}
       </button>

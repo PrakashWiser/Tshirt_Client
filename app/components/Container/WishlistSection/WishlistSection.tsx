@@ -95,6 +95,20 @@ function WishlistSection() {
 
               const price = Number(variant?.price ?? 0);
               const salePrice = Number(variant?.salePrice ?? price);
+              const sizes = Array.from(
+                new Set(
+                  (product.variants ?? [])
+                    .map((item) => item.size.trim())
+                    .filter(Boolean),
+                ),
+              );
+              const colors = Array.from(
+                new Set(
+                  (product.variants ?? [])
+                    .map((item) => item.color.trim())
+                    .filter(Boolean),
+                ),
+              );
 
               const hasDiscount = salePrice < price;
 
@@ -160,6 +174,27 @@ function WishlistSection() {
                           ₹{salePrice.toLocaleString("en-IN")}
                         </span>
                       </div>
+
+                      {(sizes.length > 0 || colors.length > 0) && (
+                        <div className="mt-2 space-y-1 text-xs text-gray-500">
+                          {sizes.length > 0 && (
+                            <p>
+                              <span className="font-medium text-gray-700">
+                                Sizes:
+                              </span>{" "}
+                              {sizes.join(", ")}
+                            </p>
+                          )}
+                          {colors.length > 0 && (
+                            <p>
+                              <span className="font-medium text-gray-700">
+                                Colors:
+                              </span>{" "}
+                              {colors.join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="mt-4 flex gap-2">
                       <Link

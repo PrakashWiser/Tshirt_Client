@@ -7,6 +7,7 @@ export interface User {
   name: string;
   email: string;
   mobile?: string;
+  profilePhoto?: string;
   role: string;
 }
 
@@ -39,6 +40,18 @@ interface AuthResponse {
   token?: string;
   accessToken?: string;
   refreshToken?: string;
+}
+
+interface UserResponse {
+  success: boolean;
+  message: string;
+  data: User;
+}
+
+interface UpdateProfilePayload {
+  name: string;
+  email: string;
+  mobile: string;
 }
 
 interface ApiResponse<T> {
@@ -139,6 +152,58 @@ export const registerUser = createAsyncThunk<
   } catch (error) {
     return thunkAPI.rejectWithValue(
       getErrorMessage(error, "Registration failed"),
+    );
+  }
+});
+
+export const fetchCurrentUser = createAsyncThunk<
+  User,
+  void,
+  { state: { auth: AuthState }; rejectValue: string }
+>("auth/fetchCurrentUser", async (_, thunkAPI) => {
+  const token = thunkAPI.getState().auth.accessToken;
+
+  try {
+    const response = await FetchApi<UserResponse>({
+      endpoint: "/auth/me",
+      token,
+    });
+
+    if (!response.data) {
+      return thunkAPI.rejectWithValue("The profile response was empty");
+    }
+
+    return response.data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(
+      getErrorMessage(error, "Failed to load profile"),
+    );
+  }
+});
+
+export const updateCurrentUserProfile = createAsyncThunk<
+  User,
+  UpdateProfilePayload,
+  { state: { auth: AuthState }; rejectValue: string }
+>("auth/updateCurrentUserProfile", async (payload, thunkAPI) => {
+  const token = thunkAPI.getState().auth.accessToken;
+
+  try {
+    const response = await FetchApi<UserResponse>({
+      endpoint: "/auth/profile",
+      method: "PUT",
+      body: payload,
+      token,
+    });
+
+    if (!response.data) {
+      return thunkAPI.rejectWithValue("The updated profile response was empty");
+    }
+
+    return response.data;
+  } catch (error) {
+    return thunkAPI.rejectWithValue(
+      getErrorMessage(error, "Failed to update profile"),
     );
   }
 });
@@ -287,6 +352,14 @@ const authSlice = createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.error = action.payload || "Registration failed";
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(updateCurrentUserProfile.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.error = null;
       })
 
       .addCase(refreshToken.fulfilled, (state, action) => {
