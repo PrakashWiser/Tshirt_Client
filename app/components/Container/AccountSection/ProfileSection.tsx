@@ -23,12 +23,11 @@ function ProfileSection() {
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
   );
-  const [fields, setFields] = useState<ProfileFields>({
-    name: "",
-    email: "",
-    mobile: "",
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [fields, setFields] = useState<ProfileFields>(() => ({
+    name: user?.name ?? "",
+    email: user?.email ?? "",
+    mobile: user?.mobile ?? "",
+  }));
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -38,34 +37,30 @@ function ProfileSection() {
     if (!isAuthenticated) return;
 
     let active = true;
-    setIsLoading(true);
-    setLoadError(null);
     void dispatch(fetchCurrentUser())
       .unwrap()
+      .then((profile) => {
+        if (active) {
+          setFields({
+            name: profile.name ?? "",
+            email: profile.email ?? "",
+            mobile: profile.mobile ?? "",
+          });
+          setLoadError(null);
+        }
+      })
       .catch((error: unknown) => {
         if (active) {
           setLoadError(
             error instanceof Error ? error.message : "Failed to load profile",
           );
         }
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
       });
 
     return () => {
       active = false;
     };
   }, [dispatch, isAuthenticated]);
-
-  useEffect(() => {
-    if (!user) return;
-    setFields({
-      name: user.name ?? "",
-      email: user.email ?? "",
-      mobile: user.mobile ?? "",
-    });
-  }, [user]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -168,66 +163,58 @@ function ProfileSection() {
               </p>
             </div>
 
-            {isLoading ? (
-              <div className="space-y-5" aria-label="Loading profile">
-                <div className="h-12 animate-pulse rounded-xl bg-gray-100" />
-                <div className="h-12 animate-pulse rounded-xl bg-gray-100" />
-                <div className="h-12 animate-pulse rounded-xl bg-gray-100" />
-              </div>
-            ) : (
-              <div className="grid gap-5 sm:grid-cols-2">
-                <label className="block text-sm font-medium text-gray-700 sm:col-span-2">
-                  Full name
-                  <input
-                    type="text"
-                    autoComplete="name"
-                    required
-                    value={fields.name}
-                    onChange={(event) =>
-                      setFields((current) => ({
-                        ...current,
-                        name: event.target.value,
-                      }))
-                    }
-                    className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#08703a] focus:bg-white focus:ring-4 focus:ring-[#08703a]/10"
-                  />
-                </label>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-gray-700 sm:col-span-2">
+                Full name
+                <input
+                  type="text"
+                  autoComplete="name"
+                  required
+                  value={fields.name}
+                  onChange={(event) =>
+                    setFields((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#08703a] focus:bg-white focus:ring-4 focus:ring-[#08703a]/10"
+                />
+              </label>
 
-                <label className="block text-sm font-medium text-gray-700">
-                  Email address
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={fields.email}
-                    onChange={(event) =>
-                      setFields((current) => ({
-                        ...current,
-                        email: event.target.value,
-                      }))
-                    }
-                    className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#08703a] focus:bg-white focus:ring-4 focus:ring-[#08703a]/10"
-                  />
-                </label>
+              <label className="block text-sm font-medium text-gray-700">
+                Email address
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={fields.email}
+                  onChange={(event) =>
+                    setFields((current) => ({
+                      ...current,
+                      email: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#08703a] focus:bg-white focus:ring-4 focus:ring-[#08703a]/10"
+                />
+              </label>
 
-                <label className="block text-sm font-medium text-gray-700">
-                  Mobile number
-                  <input
-                    type="tel"
-                    autoComplete="tel"
-                    required
-                    value={fields.mobile}
-                    onChange={(event) =>
-                      setFields((current) => ({
-                        ...current,
-                        mobile: event.target.value,
-                      }))
-                    }
-                    className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#08703a] focus:bg-white focus:ring-4 focus:ring-[#08703a]/10"
-                  />
-                </label>
-              </div>
-            )}
+              <label className="block text-sm font-medium text-gray-700">
+                Mobile number
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                  value={fields.mobile}
+                  onChange={(event) =>
+                    setFields((current) => ({
+                      ...current,
+                      mobile: event.target.value,
+                    }))
+                  }
+                  className="mt-2 w-full rounded-xl border border-gray-200 bg-gray-50/60 px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-[#08703a] focus:bg-white focus:ring-4 focus:ring-[#08703a]/10"
+                />
+              </label>
+            </div>
 
             {(loadError || saveError) && (
               <p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -249,7 +236,7 @@ function ProfileSection() {
               </p>
               <button
                 type="submit"
-                disabled={isLoading || isSaving}
+                disabled={isSaving}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#003b1f] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#002d18] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Save size={16} />
