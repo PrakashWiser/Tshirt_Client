@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -21,6 +21,7 @@ import {
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
 import { useCart } from "@/app/utils/useCart";
+import { FetchApi } from "@/app/api/FetchApi";
 import {
   addToWishlist,
   removeFromWishlist,
@@ -60,6 +61,12 @@ function ProductSection({ slug }: ProductSectionProps) {
   >({});
   const [variantViewState, setVariantViewState] =
     useState<VariantViewState | null>(null);
+  const [viewerInfo, setViewerInfo] = useState<{
+    slug: string;
+    count: number;
+  } | null>(null);
+  const [viewerErrorSlug, setViewerErrorSlug] = useState<string | null>(null);
+  const viewerIdRef = useRef<string | null>(null);
 
   const isFavorite = wishlist.some(
     (item) => item.product?._id === product?._id,
@@ -72,6 +79,47 @@ function ProductSection({ slug }: ProductSectionProps) {
       dispatch(clearCurrentProduct());
     };
   }, [dispatch, slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+
+    let active = true;
+    if (!viewerIdRef.current) {
+      viewerIdRef.current = crypto.randomUUID();
+    }
+    const visitorId = viewerIdRef.current;
+    const endpoint = `/products/${encodeURIComponent(slug)}/viewers`;
+
+    const refreshViewerCount = async () => {
+      try {
+        const response = await FetchApi<{ data: { count: number } }>({
+          endpoint,
+          method: "POST",
+          body: { visitorId },
+        });
+        const count = response.data?.count;
+        if (!Number.isSafeInteger(count) || count < 0) {
+          throw new Error("The viewer count response was invalid");
+        }
+        if (active) {
+          setViewerInfo({ slug, count });
+          setViewerErrorSlug(null);
+        }
+      } catch {
+        if (active) setViewerErrorSlug(slug);
+      }
+    };
+
+    void refreshViewerCount();
+    const heartbeat = window.setInterval(() => {
+      void refreshViewerCount();
+    }, 15_000);
+
+    return () => {
+      active = false;
+      window.clearInterval(heartbeat);
+    };
+  }, [slug]);
 
   const selectedSize = product
     ? selectedSizeByProduct[product._id] ?? product.variants[0]?.size ?? ""
@@ -322,8 +370,23 @@ function ProductSection({ slug }: ProductSectionProps) {
 
           <div className="flex items-center gap-2 text-sm text-gray-700">
             <Eye size={18} className="text-gray-500" />
-            <span className="font-semibold text-red-600">15</span>
-            <span>People are viewing this right now</span>
+            <span aria-live="polite">
+              {viewerInfo?.slug === slug ? (
+                <>
+                  <span className="font-semibold text-red-600">
+                    {viewerInfo.count}
+                  </span>{" "}
+                  {viewerInfo.count === 1
+                    ? "person is"
+                    : "people are"}{" "}
+                  viewing this right now
+                </>
+              ) : viewerErrorSlug === slug ? (
+                "Live viewer count is unavailable."
+              ) : (
+                "Checking current viewers..."
+              )}
+            </span>
           </div>
 
           {isOutOfStock ? (
