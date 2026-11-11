@@ -8,8 +8,11 @@ import { useDispatch, useSelector } from "react-redux";
 
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
+import type { CartItem } from "@/app/store/slice/cartSlice";
 import { fetchProducts } from "@/app/store/slice/productSlice";
 import { useCart } from "@/app/utils/useCart";
+
+const EMPTY_CART_ITEMS: CartItem[] = [];
 
 function CartSkeleton() {
   return (
@@ -53,7 +56,7 @@ function CartSkeleton() {
 export default function CartSection() {
   const dispatch = useDispatch<AppDispatch>();
   const { cart, itemCount, subtotal, fetchCart, updateCartItem, removeCartItem, isMutating } = useCart();
-  const items = cart?.items ?? [];
+  const items = cart?.items ?? EMPTY_CART_ITEMS;
 
   const { items: products } = useSelector((state: RootState) => state.products);
 

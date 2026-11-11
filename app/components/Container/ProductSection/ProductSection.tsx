@@ -27,6 +27,12 @@ import {
 } from "@/app/store/slice/wishlistSlice";
 import { useRouter } from "next/navigation";
 
+interface VariantViewState {
+  variantId: string;
+  imageIndex: number;
+  quantity: number;
+}
+
 interface ProductSectionProps {
   slug: string;
 }
@@ -49,10 +55,11 @@ function ProductSection({ slug }: ProductSectionProps) {
     currentError: error,
   } = useSelector((state: RootState) => state.products);
 
-  const [activeVariantIndex, setActiveVariantIndex] = useState(0);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<string>("");
-  const [quantity, setQuantity] = useState(1);
+  const [selectedSizeByProduct, setSelectedSizeByProduct] = useState<
+    Record<string, string>
+  >({});
+  const [variantViewState, setVariantViewState] =
+    useState<VariantViewState | null>(null);
 
   const isFavorite = wishlist.some(
     (item) => item.product?._id === product?._id,
@@ -66,7 +73,29 @@ function ProductSection({ slug }: ProductSectionProps) {
     };
   }, [dispatch, slug]);
 
-  const activeVariant = product?.variants?.[activeVariantIndex];
+  const selectedSize = product
+    ? selectedSizeByProduct[product._id] ?? product.variants[0]?.size ?? ""
+    : "";
+  const activeVariantIndex = product
+    ? product.variants.findIndex((variant) => variant.size === selectedSize)
+    : -1;
+  const activeVariant =
+    product?.variants?.[activeVariantIndex < 0 ? 0 : activeVariantIndex];
+  const currentVariantView =
+    activeVariant && variantViewState?.variantId === activeVariant._id
+      ? variantViewState
+      : { variantId: activeVariant?._id ?? "", imageIndex: 0, quantity: 1 };
+  const activeImageIndex = currentVariantView.imageIndex;
+  const quantity = currentVariantView.quantity;
+
+  const updateVariantView = (
+    updates: Partial<Pick<VariantViewState, "imageIndex" | "quantity">>,
+  ) => {
+    setVariantViewState({
+      ...currentVariantView,
+      ...updates,
+    });
+  };
 
   const variantImages = useMemo<string[]>(() => {
     if (!product) return [];
@@ -74,12 +103,6 @@ function ProductSection({ slug }: ProductSectionProps) {
     const fromProduct = product.images ?? [];
     return Array.from(new Set([...fromVariant, ...fromProduct]));
   }, [product, activeVariant]);
-
-  useEffect(() => {
-    if (activeVariant?.size) setSelectedSize(activeVariant.size);
-    setActiveImageIndex(0);
-    setQuantity(1);
-  }, [activeVariant]);
 
   const sizes = useMemo(() => {
     if (!product) return [];
@@ -143,12 +166,23 @@ function ProductSection({ slug }: ProductSectionProps) {
   };
 
   const handleSelectSize = (size: string) => {
-    const idx = product?.variants.findIndex((v) => v.size === size) ?? -1;
+    if (!product) return;
+    const idx = product.variants.findIndex((variant) => variant.size === size);
     if (idx < 0) return;
-    const variantStock = product?.variants[idx]?.stock ?? 0;
+    const nextVariant = product.variants[idx];
+    const variantStock = nextVariant?.stock ?? 0;
     if (variantStock <= 0) return;
-    setSelectedSize(size);
-    setActiveVariantIndex(idx);
+    setSelectedSizeByProduct((current) => ({
+      ...current,
+      [product._id]: size,
+    }));
+    if (nextVariant) {
+      setVariantViewState({
+        variantId: nextVariant._id,
+        imageIndex: 0,
+        quantity: 1,
+      });
+    }
   };
 
   if (isLoading && !product) {
@@ -237,7 +271,7 @@ function ProductSection({ slug }: ProductSectionProps) {
                 <button
                   key={img + index}
                   type="button"
-                  onClick={() => setActiveImageIndex(index)}
+                  onClick={() => updateVariantView({ imageIndex: index })}
                   aria-label={`View image ${index + 1}`}
                   className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-md border-2 border-gray-300 transition ${
                     activeImageIndex === index
@@ -351,7 +385,9 @@ function ProductSection({ slug }: ProductSectionProps) {
                 type="button"
                 aria-label="Decrease quantity"
                 disabled={isOutOfStock || quantity <= 1}
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                onClick={() =>
+                  updateVariantView({ quantity: Math.max(1, quantity - 1) })
+                }
                 className="px-4 py-3 text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Minus size={16} />
@@ -363,7 +399,11 @@ function ProductSection({ slug }: ProductSectionProps) {
                 type="button"
                 aria-label="Increase quantity"
                 disabled={isOutOfStock || quantity >= maxQuantity}
-                onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                onClick={() =>
+                  updateVariantView({
+                    quantity: Math.min(maxQuantity, quantity + 1),
+                  })
+                }
                 className="px-4 py-3 text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus size={16} />

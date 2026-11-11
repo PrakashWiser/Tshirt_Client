@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ShoppingCart, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomImage from "@/app/common/CustomImage";
-import type { Product, ProductVariant } from "@/app/store/slice/productSlice";
+import type { Product } from "@/app/store/slice/productSlice";
 import { AppDispatch, RootState } from "../store/store";
 import { useDispatch, useSelector } from "react-redux";
 import { openAuthModal } from "../store/slice/authModalSlice";
 import { useStoreNotification } from "@/app/common/StoreNotificationProvider";
+import { getAvailableVariant, getEffectivePrice } from "@/app/utils/product";
 
 interface ProductCardProps {
   product: Product;
@@ -36,22 +37,13 @@ function ProductCard({
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
   );
-  useEffect(() => {
-    return () => {
-      setButtonState("idle");
-    };
-  }, []);
-
-  const activeVariant = product.variants?.find(
-    (variant: ProductVariant) => variant.isActive && variant.stock > 0,
-  );
+  const activeVariant = getAvailableVariant(product);
 
   if (!activeVariant) return null;
 
   const price = activeVariant.price;
 
-  const salePrice =
-    activeVariant.salePrice > 0 ? activeVariant.salePrice : activeVariant.price;
+  const salePrice = getEffectivePrice(activeVariant);
 
   const discount =
     price > salePrice ? Math.round(((price - salePrice) / price) * 100) : 0;

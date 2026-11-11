@@ -34,7 +34,7 @@ export interface CreateAddressPayload {
   isDefault?: boolean;
 }
 
-export interface UpdateAddressPayload extends CreateAddressPayload {}
+export type UpdateAddressPayload = CreateAddressPayload;
 
 interface AddressState {
   addresses: Address[];

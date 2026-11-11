@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +23,7 @@ import { logoutUser } from "@/app/store/slice/authSlice";
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
 import { openAuthModal } from "@/app/store/slice/authModalSlice";
+import { getAvailableVariant, getEffectivePrice, getProductImage } from "@/app/utils/product";
 
 const navItems = [
   { label: "Shop", href: "/products", dropdown: true },
@@ -32,6 +33,7 @@ const navItems = [
   { label: "New Arrivals", href: "/products?sort=newest" },
   { label: "Best Sellers", href: "/products?sort=popular" },
 ];
+const EMPTY_PRODUCTS: Product[] = [];
 
 function useDebounce<T>(value: T, delay = 350): T {
   const [debounced, setDebounced] = useState(value);
@@ -62,21 +64,18 @@ function Header() {
 
   const safeProducts: Product[] = Array.isArray(products) ? products : [];
 
-  useEffect(() => {
-    if (searchOpen) {
-      const id = setTimeout(() => inputRef.current?.focus(), 80);
-      return () => clearTimeout(id);
-    }
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
     setQuery("");
-  }, [searchOpen]);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSearchOpen(false);
+      if (e.key === "Escape") closeSearch();
     };
     if (searchOpen) window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [searchOpen]);
+  }, [closeSearch, searchOpen]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -105,12 +104,7 @@ function Header() {
   }, [debouncedQuery, dispatch]);
 
   const showResults = debouncedQuery.trim().length > 0;
-  const results = useMemo(
-    () => (showResults ? safeProducts.slice(0, 6) : []),
-    [showResults, safeProducts],
-  );
-
-  const closeSearch = () => setSearchOpen(false);
+  const results = showResults ? safeProducts.slice(0, 6) : EMPTY_PRODUCTS;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -161,7 +155,14 @@ function Header() {
                 type="button"
                 aria-label="Search"
                 aria-expanded={searchOpen}
-                onClick={() => setSearchOpen((v) => !v)}
+                onClick={() => {
+                  if (searchOpen) {
+                    closeSearch();
+                    return;
+                  }
+                  setSearchOpen(true);
+                  window.setTimeout(() => inputRef.current?.focus(), 80);
+                }}
                 className="flex items-center gap-2 text-gray-800 transition-colors hover:text-[#003B1F]"
               >
                 <Search size={22} strokeWidth={1.8} />
@@ -381,16 +382,9 @@ function Header() {
                       ) : (
                         <ul className="p-2">
                           {results.map((product) => {
-                            const variant = product.variants?.[0];
-                            const image =
-                              variant?.images?.[0] ?? product.images?.[0] ?? "";
-                            const price =
-                              typeof variant?.salePrice === "number" &&
-                              variant.salePrice > 0
-                                ? variant.salePrice
-                                : typeof variant?.price === "number"
-                                  ? variant.price
-                                  : 0;
+                            const variant = getAvailableVariant(product);
+                            const image = getProductImage(product, variant);
+                            const price = getEffectivePrice(variant);
 
                             return (
                               <li key={product._id}>

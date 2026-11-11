@@ -91,28 +91,24 @@ export const FetchApi = async <T = unknown>({
     const contentType = response.headers.get("content-type");
     const rawText = await response.text();
 
-    // if (response.status === 401 && skipAuthHandler) {
-    //   const message = getApiErrorMessage(rawText, "Authentication failed");
-    //   throw new Error(message);
-    // }
+    if (response.status === 401) {
+      const message = getApiErrorMessage(rawText, "Authentication failed");
 
-    // if (response.status === 401) {
-    //   if (!isSessionExpiredShown) {
-    //     isSessionExpiredShown = true;
+      if (skipAuthHandler) {
+        throw new Error(message);
+      }
 
-    //     if (onLogout) {
-    //       onLogout();
-    //     }
+      if (!isSessionExpiredShown) {
+        isSessionExpiredShown = true;
+        onLogout?.();
+        window.dispatchEvent(new CustomEvent("session-expired"));
+        window.setTimeout(() => {
+          isSessionExpiredShown = false;
+        }, 3000);
+      }
 
-    //     window.dispatchEvent(new CustomEvent("session-expired"));
-
-    //     setTimeout(() => {
-    //       isSessionExpiredShown = false;
-    //     }, 3000);
-    //   }
-
-    //   throw new Error("SESSION_EXPIRED");
-    // }
+      throw new Error("SESSION_EXPIRED");
+    }
 
     if (!response.ok) {
       throw new Error(getApiErrorMessage(rawText, "Something went wrong"));

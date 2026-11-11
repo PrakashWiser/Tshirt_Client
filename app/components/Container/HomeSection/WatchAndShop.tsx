@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -192,9 +193,11 @@ function WatchAndShop() {
 
                   <div className="flex flex-1 items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4 sm:py-4">
                     <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-14 sm:w-14">
-                      <img
+                      <Image
                         src={item.image}
                         alt={item.title}
+                        width={56}
+                        height={56}
                         className="h-full w-full object-cover"
                       />
                     </div>

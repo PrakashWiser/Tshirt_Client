@@ -1,4 +1,3 @@
-import CollectionSection from "@/app/components/Container/CollectionSection/CollectionSection";
 import ProductSection from "@/app/components/Container/ProductSection/ProductSection";
 import type { Metadata } from "next";
 

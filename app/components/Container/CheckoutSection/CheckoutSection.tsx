@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -121,20 +121,13 @@ export default function CheckoutSection() {
     void dispatch(fetchAddresses());
   }, [dispatch, fetchCart]);
 
-  useEffect(() => {
-    if (!selectedAddressId && addresses.length > 0) {
-      const def = addresses.find((a) => a.isDefault) ?? addresses[0];
-      setSelectedAddressId(def._id);
-    }
-  }, [addresses, selectedAddressId]);
-
   const shippingCharge = subtotal > 2000 ? 0 : 100;
   const totalAmount = subtotal + shippingCharge;
-
-  const selectedAddress = useMemo(
-    () => addresses.find((a) => a._id === selectedAddressId),
-    [addresses, selectedAddressId],
-  );
+  const selectedAddress =
+    addresses.find((address) => address._id === selectedAddressId) ??
+    addresses.find((address) => address.isDefault) ??
+    addresses[0];
+  const resolvedSelectedAddressId = selectedAddress?._id ?? "";
 
   const openCreateAddress = () => {
     setEditingAddress(null);
@@ -198,10 +191,13 @@ export default function CheckoutSection() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedAddressId || orderMutating) return;
+    if (!resolvedSelectedAddressId || orderMutating) return;
     try {
       await dispatch(
-        createOrder({ shippingAddressId: selectedAddressId, paymentMethod }),
+        createOrder({
+          shippingAddressId: resolvedSelectedAddressId,
+          paymentMethod,
+        }),
       ).unwrap();
       setShowSuccessModal(true);
     } catch {}
@@ -275,7 +271,7 @@ export default function CheckoutSection() {
                   ) : (
                     <div className="mt-5 space-y-3">
                       {addresses.map((address) => {
-                        const selected = address._id === selectedAddressId;
+                        const selected = address._id === resolvedSelectedAddressId;
                         return (
                           <div
                             key={address._id}
@@ -489,7 +485,7 @@ export default function CheckoutSection() {
 
                   <button
                     type="button"
-                    disabled={!selectedAddressId || orderMutating}
+                    disabled={!resolvedSelectedAddressId || orderMutating}
                     onClick={() => void handlePlaceOrder()}
                     className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#1a1a1a] px-4 py-3.5 text-sm font-semibold tracking-wide text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                   >

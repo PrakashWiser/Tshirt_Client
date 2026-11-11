@@ -9,6 +9,7 @@ import Footer from "./components/Common/Footer/Footer";
 import WhatsAppButton from "./common/WhatsAppButton";
 import AuthModal from "./common/AuthModal";
 import StoreNotificationProvider from "./common/StoreNotificationProvider";
+import AIChatWidget from "./common/AIChatWidget";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -113,6 +114,7 @@ export default function RootLayout({
             <ProtectedRoute>{children}</ProtectedRoute>
             <Footer />
             <WhatsAppButton />
+            <AIChatWidget />
           </StoreNotificationProvider>
         </ReduxProvider>
       </body>
