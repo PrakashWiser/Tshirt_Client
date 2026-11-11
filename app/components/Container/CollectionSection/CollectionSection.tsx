@@ -11,7 +11,10 @@ import {
 } from "@/app/store/slice/productSlice";
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
-import { fetchParentCategories } from "@/app/store/slice/parentCategorySlice";
+import {
+  fetchCategories,
+  fetchParentCategories,
+} from "@/app/store/slice/parentCategorySlice";
 
 interface CollectionSectionProps {
   slug: string;
@@ -36,18 +39,27 @@ function CollectionSection({ slug }: CollectionSectionProps) {
     error,
   } = useSelector((state: RootState) => state.products);
 
-  const { items: categories } = useSelector(
-    (state: RootState) => state.parentCategories,
-  );
+  const {
+    items: parentCategories,
+    categories,
+    isLoading: isParentCategoriesLoading,
+    error: parentCategoriesError,
+    isCategoriesLoading,
+    categoriesError,
+  } = useSelector((state: RootState) => state.parentCategories);
 
   useEffect(() => {
     void dispatch(fetchParentCategories());
+    void dispatch(fetchCategories());
   }, [dispatch]);
 
   const category = useMemo(
     () =>
+      parentCategories.find(
+        (item) => item.slug.toLowerCase() === slug.toLowerCase(),
+      ) ??
       categories.find((item) => item.slug.toLowerCase() === slug.toLowerCase()),
-    [categories, slug],
+    [categories, parentCategories, slug],
   );
 
   useEffect(() => {
@@ -76,9 +88,12 @@ function CollectionSection({ slug }: CollectionSectionProps) {
 
   const safeProducts: Product[] = Array.isArray(products) ? products : [];
 
-  const isResolvingCategory = categories.length === 0;
+  const isResolvingCategory =
+    (parentCategories.length === 0 && isParentCategoriesLoading) ||
+    (categories.length === 0 && isCategoriesLoading);
   const isCategoryMissing = !isResolvingCategory && !category;
   const isInitialLoading = isResolvingCategory || isLoading;
+  const categoryLoadError = parentCategoriesError || categoriesError;
 
   return (
     <section className="w-full bg-[#fffdf9] py-6">
@@ -105,7 +120,11 @@ function CollectionSection({ slug }: CollectionSectionProps) {
           </div>
         </div>
 
-        {isCategoryMissing ? (
+        {isCategoryMissing && categoryLoadError ? (
+          <div role="alert" className="py-16 text-center text-sm text-red-500">
+            Unable to load categories: {categoryLoadError}
+          </div>
+        ) : isCategoryMissing ? (
           <div className="py-16 text-center text-sm text-gray-500">
             Category not found.
           </div>

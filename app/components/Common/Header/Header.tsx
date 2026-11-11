@@ -69,6 +69,8 @@ function Header() {
   const {
     items: parentCategories,
     categories,
+    isLoading: isParentCategoriesLoading,
+    error: parentCategoriesError,
     isCategoriesLoading,
     categoriesError,
   } = useSelector((state: RootState) => state.parentCategories);
@@ -161,16 +163,20 @@ function Header() {
                 const childCategories = categories.filter(
                   (item) => item.parentCategory?._id === category._id,
                 );
+                const hasDropdown =
+                  childCategories.length > 0 ||
+                  isCategoriesLoading ||
+                  Boolean(categoriesError);
 
                 return (
                   <div key={category._id} className="group relative">
                     <Link
                       href={`/collections/${category.slug}`}
-                      aria-haspopup={childCategories.length > 0}
+                      aria-haspopup={hasDropdown}
                       className="flex items-center gap-1 whitespace-nowrap text-sm font-medium text-gray-800 transition-colors duration-200 hover:text-[#003B1F]"
                     >
                       {category.name}
-                      {childCategories.length > 0 && (
+                      {hasDropdown && (
                         <ChevronDown
                           size={13}
                           strokeWidth={1.8}
@@ -178,7 +184,7 @@ function Header() {
                         />
                       )}
                     </Link>
-                    {childCategories.length > 0 && (
+                    {hasDropdown && (
                       <div className="invisible absolute left-0 top-full z-50 mt-2 min-w-48 translate-y-1 rounded-lg border border-gray-100 bg-white py-2 opacity-0 shadow-xl transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
                         <Link
                           href={`/collections/${category.slug}`}
@@ -195,11 +201,29 @@ function Header() {
                             {child.name}
                           </Link>
                         ))}
+                        {isCategoriesLoading && childCategories.length === 0 && (
+                          <p className="px-4 py-2 text-sm text-gray-500">
+                            Loading categories...
+                          </p>
+                        )}
+                        {categoriesError && childCategories.length === 0 && (
+                          <p role="alert" className="px-4 py-2 text-sm text-red-600">
+                            Unable to load categories.
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
                 );
               })}
+              {isParentCategoriesLoading && parentCategories.length === 0 && (
+                <span className="text-sm text-gray-500">Loading categories...</span>
+              )}
+              {parentCategoriesError && parentCategories.length === 0 && (
+                <span role="alert" className="text-sm text-red-600">
+                  Categories could not be loaded.
+                </span>
+              )}
             </nav>
 
             <div className="flex shrink-0 items-center gap-4 ">
@@ -549,6 +573,10 @@ function Header() {
                     );
                     const expanded =
                       expandedMobileCategoryId === category._id;
+                    const hasDropdown =
+                      childCategories.length > 0 ||
+                      isCategoriesLoading ||
+                      Boolean(categoriesError);
 
                     return (
                       <motion.div
@@ -566,7 +594,7 @@ function Header() {
                           >
                             {category.name}
                           </Link>
-                          {childCategories.length > 0 && (
+                          {hasDropdown && (
                             <button
                               type="button"
                               aria-label={`${expanded ? "Collapse" : "Expand"} ${category.name} categories`}
@@ -598,19 +626,35 @@ function Header() {
                                 {child.name}
                               </Link>
                             ))}
+                            {isCategoriesLoading &&
+                              childCategories.length === 0 && (
+                                <p className="px-3 py-2.5 text-sm text-gray-500">
+                                  Loading categories...
+                                </p>
+                              )}
+                            {categoriesError &&
+                              childCategories.length === 0 && (
+                                <p
+                                  role="alert"
+                                  className="px-3 py-2.5 text-sm text-red-600"
+                                >
+                                  Unable to load categories.
+                                </p>
+                              )}
                           </div>
                         )}
                       </motion.div>
                     );
                   })}
-                  {isCategoriesLoading && parentCategories.length === 0 && (
+                  {isParentCategoriesLoading && parentCategories.length === 0 && (
                     <p className="px-3 py-3 text-sm text-gray-500">
                       Loading categories...
                     </p>
                   )}
-                  {categoriesError && parentCategories.length === 0 && (
+                  {(parentCategoriesError || categoriesError) &&
+                    parentCategories.length === 0 && (
                     <p role="alert" className="px-3 py-3 text-sm text-red-600">
-                      Unable to load categories: {categoriesError}
+                      Unable to load categories.
                     </p>
                   )}
 
