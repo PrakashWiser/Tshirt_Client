@@ -150,16 +150,42 @@ function Header() {
               aria-label="Main navigation"
               className="hidden flex-1 items-center justify-center gap-5 md:flex"
             >
-              {navItems.map((item) => (
+              <div className="group relative">
                 <Link
-                  key={item.href + item.label}
-                  href={item.href}
+                  href="/products"
+                  aria-haspopup="true"
                   className="group flex items-center gap-1 whitespace-nowrap text-sm font-medium text-gray-800 transition-colors duration-200 hover:text-[#003B1F]"
                 >
-                  {item.label}
+                  Shop
+                  <ChevronDown
+                    size={13}
+                    strokeWidth={1.8}
+                    className="transition-transform duration-200 group-hover:rotate-180"
+                  />
                 </Link>
-              ))}
-              {parentCategories.map((category) => {
+                <div className="invisible absolute left-0 top-full z-50 mt-2 max-h-72 min-w-48 overflow-y-auto overscroll-contain rounded-lg border border-gray-100 bg-white py-2 opacity-0 shadow-xl transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                  <Link
+                    href="/products"
+                    className="block px-4 py-2 text-sm font-semibold text-[#003B1F] hover:bg-[#F4F7F5]"
+                  >
+                    All Products
+                  </Link>
+                  {parentCategories.map((category) => (
+                    <Link
+                      key={category._id}
+                      href={`/collections/${category.slug}`}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-[#F4F7F5] hover:text-[#003B1F]"
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              {parentCategories
+                .filter((category) =>
+                  /\bmen(?:'s)?\b|\bkids?\b|\bchildren\b/i.test(category.name),
+                )
+                .map((category) => {
                 const childCategories = categories.filter(
                   (item) => item.parentCategory?._id === category._id,
                 );
@@ -185,7 +211,7 @@ function Header() {
                       )}
                     </Link>
                     {hasDropdown && (
-                      <div className="invisible absolute left-0 top-full z-50 mt-2 min-w-48 translate-y-1 rounded-lg border border-gray-100 bg-white py-2 opacity-0 shadow-xl transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      <div className="invisible absolute left-0 top-full z-50 mt-2 max-h-72 min-w-48 translate-y-1 overflow-y-auto overscroll-contain rounded-lg border border-gray-100 bg-white py-2 opacity-0 shadow-xl transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
                         <Link
                           href={`/collections/${category.slug}`}
                           className="block px-4 py-2 text-sm font-semibold text-[#003B1F] hover:bg-[#F4F7F5]"
@@ -216,6 +242,17 @@ function Header() {
                   </div>
                 );
               })}
+              {navItems
+                .filter((item) => item.label !== "Shop")
+                .map((item) => (
+                  <Link
+                    key={item.href + item.label}
+                    href={item.href}
+                    className="group flex items-center gap-1 whitespace-nowrap text-sm font-medium text-gray-800 transition-colors duration-200 hover:text-[#003B1F]"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               {isParentCategoriesLoading && parentCategories.length === 0 && (
                 <span className="text-sm text-gray-500">Loading categories...</span>
               )}
