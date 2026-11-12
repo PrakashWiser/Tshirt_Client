@@ -16,7 +16,11 @@ import {
 
 function WishlistSection() {
   const dispatch = useDispatch<AppDispatch>();
-  const wishlist = useSelector((state: RootState) => state.wishlist.wishlist);
+  const wishlist = useSelector((state: RootState) =>
+    state.auth.isAuthenticated
+      ? state.wishlist.wishlist
+      : state.wishlist.guestWishlist,
+  );
   const isLoading = useSelector((state: RootState) => state.wishlist.isLoading);
 
   const isMutating = useSelector(

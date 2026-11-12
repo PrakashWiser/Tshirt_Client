@@ -6,9 +6,6 @@ import { ShoppingCart, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomImage from "@/app/common/CustomImage";
 import type { Product } from "@/app/store/slice/productSlice";
-import { AppDispatch, RootState } from "../store/store";
-import { useDispatch, useSelector } from "react-redux";
-import { openAuthModal } from "../store/slice/authModalSlice";
 import { useStoreNotification } from "@/app/common/StoreNotificationProvider";
 import { getAvailableVariant, getEffectivePrice } from "@/app/utils/product";
 
@@ -19,6 +16,7 @@ interface ProductCardProps {
     size: string;
     color: string;
     quantity: number;
+    product: Product;
   }) => Promise<unknown> | unknown;
   className?: string;
 }
@@ -31,12 +29,7 @@ function ProductCard({
   className = "",
 }: ProductCardProps) {
   const [buttonState, setButtonState] = useState<ButtonState>("idle");
-  const dispatch = useDispatch<AppDispatch>();
   const notify = useStoreNotification();
-
-  const { user, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth,
-  );
   const activeVariant = getAvailableVariant(product);
 
   if (!activeVariant) return null;
@@ -53,11 +46,6 @@ function ProductCard({
   const productUrl = `/products/${product.slug}`;
 
   const handleAddToCart = async () => {
-    if (!isAuthenticated || !user) {
-      dispatch(openAuthModal("login"));
-      return;
-    }
-
     if (buttonState !== "idle") return;
     if (!onAddToCart) return;
 
@@ -68,6 +56,7 @@ function ProductCard({
         productId: product._id,
         size: activeVariant.size,
         color: activeVariant.color,
+        product,
         quantity: 1,
       });
 

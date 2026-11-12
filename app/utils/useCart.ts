@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import type { AppDispatch } from "../store/store";
 import type { RootState } from "../store/rootReducer";
+import type { Product } from "../store/slice/productSlice";
 
 import {
   addToCart as addToCartThunk,
@@ -18,19 +19,21 @@ interface AddToCartArgs {
   productId: string;
   size: string;
   color: string;
+  product: Product;
   quantity?: number;
 }
 
 export function useCart() {
   const dispatch = useDispatch<AppDispatch>();
 
-  const cart = useSelector(
-    (state: RootState) => state.cart.cart,
+  const cart = useSelector((state: RootState) =>
+    state.auth.isAuthenticated ? state.cart.cart : state.cart.guestCart,
   );
 
   const isMutating = useSelector(
     (state: RootState) => state.cart.isMutating,
   );
+  const isLoading = useSelector((state: RootState) => state.cart.isLoading);
 
   const itemCount =
     cart?.items.reduce(
@@ -50,7 +53,7 @@ export function useCart() {
 
   const addCartItem = useCallback(
     (payload: AddToCartArgs) => {
-      return dispatch(addToCartThunk(payload));
+      return dispatch(addToCartThunk(payload)).unwrap();
     },
     [dispatch],
   );
@@ -82,6 +85,7 @@ export function useCart() {
     cart,
     itemCount,
     subtotal,
+    isLoading,
     isMutating,
     addToCart: addCartItem,
     fetchCart: fetchCartData,

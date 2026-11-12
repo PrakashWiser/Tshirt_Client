@@ -1,9 +1,11 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useSyncExternalStore } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import type { ReactNode } from "react";
 import type { RootState } from "../store/store";
+import type { AppDispatch } from "../store/store";
+import { openAuthModal } from "../store/slice/authModalSlice";
 
 const subscribe = () => () => {};
 const getClientSnapshot = () => true;
@@ -18,6 +20,7 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const dispatch = useDispatch<AppDispatch>();
 
   const { accessToken, isAuthenticated, isLoading } = useSelector(
     (state: RootState) => state.auth,
@@ -33,6 +36,25 @@ export default function ProtectedRoute({
   ];
 
   const isProtectedRoute = protectedRoutes.includes(pathname);
+  const requiresCheckoutLogin = pathname === "/checkout";
+
+  useEffect(() => {
+    if (
+      mounted &&
+      requiresCheckoutLogin &&
+      !isLoading &&
+      (!accessToken || !isAuthenticated)
+    ) {
+      dispatch(openAuthModal("login"));
+    }
+  }, [
+    mounted,
+    requiresCheckoutLogin,
+    isLoading,
+    accessToken,
+    isAuthenticated,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (
@@ -56,6 +78,13 @@ export default function ProtectedRoute({
 
   if (
     isProtectedRoute &&
+    (isLoading || !accessToken || !isAuthenticated)
+  ) {
+    return null;
+  }
+
+  if (
+    requiresCheckoutLogin &&
     (isLoading || !accessToken || !isAuthenticated)
   ) {
     return null;

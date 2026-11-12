@@ -24,12 +24,17 @@ import {
   fetchCategories,
   fetchParentCategories,
 } from "@/app/store/slice/parentCategorySlice";
-import { fetchWishlist } from "@/app/store/slice/wishlistSlice";
+import {
+  fetchWishlist,
+  mergeGuestWishlist,
+} from "@/app/store/slice/wishlistSlice";
+import { mergeGuestCart } from "@/app/store/slice/cartSlice";
 import { logoutUser } from "@/app/store/slice/authSlice";
 import type { RootState } from "@/app/store/rootReducer";
 import type { AppDispatch } from "@/app/store/store";
 import { openAuthModal } from "@/app/store/slice/authModalSlice";
 import { getAvailableVariant, getEffectivePrice, getProductImage } from "@/app/utils/product";
+import { useStoreNotification } from "@/app/common/StoreNotificationProvider";
 
 const navItems = [
   { label: "Shop", href: "/products" },
@@ -60,8 +65,10 @@ function Header() {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
+  const isSyncingGuestData = useRef(false);
   const { itemCount, fetchCart } = useCart();
   const dispatch = useDispatch<AppDispatch>();
+  const notify = useStoreNotification();
   const { items: products, isLoading } = useSelector(
     (state: RootState) => state.products,
   );
@@ -69,7 +76,16 @@ function Header() {
     (state: RootState) => state.auth,
   );
   const wishlistCount = useSelector(
-    (state: RootState) => state.wishlist.wishlist.length,
+    (state: RootState) =>
+      (state.auth.isAuthenticated
+        ? state.wishlist.wishlist
+        : state.wishlist.guestWishlist).length,
+  );
+  const guestCartItems = useSelector(
+    (state: RootState) => state.cart.guestCart.items,
+  );
+  const guestWishlistItems = useSelector(
+    (state: RootState) => state.wishlist.guestWishlist,
   );
   const {
     items: parentCategories,
@@ -130,11 +146,56 @@ function Header() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isAuthenticated || isSyncingGuestData.current) return;
+
+    const syncTasks: Promise<unknown>[] = [];
+    if (guestCartItems.length > 0) {
+      isSyncingGuestData.current = true;
+      syncTasks.push(
+        dispatch(mergeGuestCart())
+          .unwrap()
+          .catch((error: unknown) => {
+            notify({
+              title: "Could not sync your cart",
+              message: error instanceof Error ? error.message : "Please try again.",
+              kind: "error",
+            });
+          }),
+      );
+    } else {
       void fetchCart();
+    }
+
+    if (guestWishlistItems.length > 0) {
+      isSyncingGuestData.current = true;
+      syncTasks.push(
+        dispatch(mergeGuestWishlist())
+          .unwrap()
+          .catch((error: unknown) => {
+            notify({
+              title: "Could not sync your favourites",
+              message: error instanceof Error ? error.message : "Please try again.",
+              kind: "error",
+            });
+          }),
+      );
+    } else {
       void dispatch(fetchWishlist());
     }
-  }, [dispatch, isAuthenticated, fetchCart]);
+
+    if (syncTasks.length > 0) {
+      void Promise.all(syncTasks).finally(() => {
+        isSyncingGuestData.current = false;
+      });
+    }
+  }, [
+    dispatch,
+    isAuthenticated,
+    fetchCart,
+    guestCartItems.length,
+    guestWishlistItems.length,
+    notify,
+  ]);
 
   return (
     <>
@@ -358,7 +419,7 @@ function Header() {
               <Link
                 href="/wishlist"
                 aria-label={
-                  wishlistCount > 0 && isAuthenticated
+                  wishlistCount > 0
                     ? `Wishlist, ${wishlistCount} saved`
                     : "Wishlist"
                 }
@@ -366,7 +427,7 @@ function Header() {
               >
                 <Heart size={22} strokeWidth={1.8} />
                 <AnimatePresence>
-                  {wishlistCount > 0 && isAuthenticated && (
+                  {wishlistCount > 0 && (
                     <motion.span
                       key={wishlistCount}
                       initial={{ scale: 0.5, opacity: 0 }}
@@ -781,7 +842,7 @@ function Header() {
                         <Heart size={18} strokeWidth={1.8} />
                         Wishlist
                       </span>
-                      {wishlistCount > 0 && isAuthenticated && (
+                      {wishlistCount > 0 && (
                         <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#003B1F] px-1 text-[10px] font-semibold text-white">
                           {wishlistCount}
                         </span>

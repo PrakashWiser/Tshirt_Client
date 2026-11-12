@@ -135,7 +135,7 @@ export default function AIChatWidget() {
       {open && (
         <section
           aria-label="AI shopping assistant"
-          className="fixed inset-0 flex h-[100dvh] w-auto max-w-none flex-col overflow-hidden border-0 border-[#e8ece9] bg-[#fffdf9] pt-[env(safe-area-inset-top)] shadow-none sm:absolute sm:inset-auto sm:bottom-16 sm:right-0 sm:h-[min(72dvh,620px)] sm:w-[calc(100vw-2rem)] sm:max-w-[390px] sm:rounded-2xl sm:border sm:pt-0 sm:shadow-2xl"
+          className="fixed inset-0 flex h-[100dvh] w-auto max-w-none flex-col overflow-hidden border-0 border-[#e8ece9] bg-[#fffdf9] pt-[env(safe-area-inset-top)] shadow-none sm:left-auto sm:top-24 sm:right-6 sm:bottom-40 sm:h-auto sm:w-[calc(100vw-2rem)] sm:max-w-[390px] sm:rounded-2xl sm:border sm:pt-0 sm:shadow-2xl"
         >
           <header className="flex items-center justify-between bg-[#003b1f] px-4 py-3 text-white">
             <div className="flex items-center gap-2">

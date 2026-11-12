@@ -95,7 +95,7 @@ function CheckoutSkeleton() {
 export default function CheckoutSection() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { cart, subtotal, fetchCart } = useCart();
+  const { cart, subtotal, isLoading: cartLoading, isMutating: cartMutating } = useCart();
   const items = cart?.items ?? [];
 
   const {
@@ -119,9 +119,8 @@ export default function CheckoutSection() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    void fetchCart();
     void dispatch(fetchAddresses());
-  }, [dispatch, fetchCart]);
+  }, [dispatch]);
 
   useEffect(() => {
     if (!showSuccessModal) return;
@@ -214,6 +213,19 @@ export default function CheckoutSection() {
       setShowSuccessModal(true);
     } catch {}
   };
+
+  if (cartLoading || cartMutating || !cart) {
+    return (
+      <section className="min-h-screen bg-[#F4F7F5] py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h1 className="text-lg font-bold tracking-wider text-gray-900 sm:text-xl">
+            CHECKOUT
+          </h1>
+          <CheckoutSkeleton />
+        </div>
+      </section>
+    );
+  }
 
   if (items.length === 0) {
     return (

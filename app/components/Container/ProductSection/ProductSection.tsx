@@ -13,7 +13,6 @@ import {
   Heart,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { openAuthModal } from "@/app/store/slice/authModalSlice";
 import {
   fetchProductBySlug,
   clearCurrentProduct,
@@ -27,6 +26,7 @@ import {
   removeFromWishlist,
 } from "@/app/store/slice/wishlistSlice";
 import { useRouter } from "next/navigation";
+import { useStoreNotification } from "@/app/common/StoreNotificationProvider";
 
 interface VariantViewState {
   variantId: string;
@@ -41,13 +41,15 @@ interface ProductSectionProps {
 function ProductSection({ slug }: ProductSectionProps) {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const notify = useStoreNotification();
   const { addToCart } = useCart();
-  const { user, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth,
+  const wishlist = useSelector((state: RootState) =>
+    state.auth.isAuthenticated
+      ? state.wishlist.wishlist
+      : state.wishlist.guestWishlist,
   );
-
-  const { wishlist, isMutating: wishlistLoading } = useSelector(
-    (state: RootState) => state.wishlist,
+  const wishlistLoading = useSelector(
+    (state: RootState) => state.wishlist.isMutating,
   );
 
   const {
@@ -172,45 +174,63 @@ function ProductSection({ slug }: ProductSectionProps) {
 
   const handleAddToCart = () => {
     if (!product || !activeVariant || isOutOfStock) return;
-    if (!isAuthenticated || !user) {
-      dispatch(openAuthModal("login"));
-      return;
-    }
-    addToCart({
+    void addToCart({
       productId: product._id,
       size: activeVariant.size,
       color: activeVariant.color,
+      product,
       quantity: Math.min(quantity, maxQuantity),
+    }).catch((error: unknown) => {
+      notify({
+        title: "Could not add to cart",
+        message: error instanceof Error ? error.message : "Please try again.",
+        kind: "error",
+      });
     });
   };
 
   const handleWishlist = () => {
     if (!product) return;
-    if (!isAuthenticated || !user) {
-      dispatch(openAuthModal("login"));
-      return;
-    }
     if (isFavorite) {
-      dispatch(removeFromWishlist(product._id));
+      void dispatch(removeFromWishlist(product._id))
+        .unwrap()
+        .catch((error: unknown) => {
+          notify({
+            title: "Could not update favourites",
+            message: error instanceof Error ? error.message : "Please try again.",
+            kind: "error",
+          });
+        });
     } else {
-      dispatch(addToWishlist(product._id));
+      void dispatch(addToWishlist(product))
+        .unwrap()
+        .catch((error: unknown) => {
+          notify({
+            title: "Could not update favourites",
+            message: error instanceof Error ? error.message : "Please try again.",
+            kind: "error",
+          });
+        });
     }
   };
 
   const handleBuyNow = () => {
     if (!product || !activeVariant || isOutOfStock) return;
-    if (!isAuthenticated || !user) {
-      dispatch(openAuthModal("login"));
-      return;
-    }
-    addToCart({
+    void addToCart({
       productId: product._id,
       size: activeVariant.size,
       color: activeVariant.color,
+      product,
       quantity: Math.min(quantity, maxQuantity),
-    });
-
-    router.push("/checkout");
+    })
+      .then(() => router.push("/checkout"))
+      .catch((error: unknown) => {
+        notify({
+          title: "Could not add to cart",
+          message: error instanceof Error ? error.message : "Please try again.",
+          kind: "error",
+        });
+      });
   };
 
   const handleSelectSize = (size: string) => {
