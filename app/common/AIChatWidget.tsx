@@ -69,20 +69,6 @@ export default function AIChatWidget() {
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
-
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousRootOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousRootOverflow;
-    };
-  }, [open]);
-
-  useEffect(() => {
     conversationRef.current?.scrollTo({
       top: conversationRef.current.scrollHeight,
       behavior: "smooth",
